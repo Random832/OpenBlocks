@@ -301,9 +301,10 @@ public class OpenBlocks {
 	}
 
 	@SubscribeEvent
-	public static void registerGenerators(final GatherDataEvent event, CompletableFuture<HolderLookup.Provider> registries) {
+	public static void registerGenerators(final GatherDataEvent event) {
 		final DataGenerator generator = event.getGenerator();
 		final PackOutput packOutput = event.getGenerator().getPackOutput();
+		final CompletableFuture<HolderLookup.Provider> registries = event.getLookupProvider();
 		OpenBlocksTagProviders.BlockTags blockTagProvider;
 
 		generator.addProvider(event.includeServer(), new OpenBlocksRecipes(packOutput, registries));
