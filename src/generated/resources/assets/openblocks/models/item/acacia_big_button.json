@@ -1,0 +1,6 @@
+{
+  "parent": "openblocks:block/big_button_inventory",
+  "textures": {
+    "all": "minecraft:block/acacia_planks"
+  }
+}

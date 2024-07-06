@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=bottom": {
+      "model": "openblocks:block/pencil_panel"
+    },
+    "half=top": {
+      "model": "openblocks:block/pencil_panel"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:cyan_dye"
+    },
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:ender_eye"
+    },
+    {
+      "tag": "c:slimeballs"
+    }
+  ],
+  "result": {
+    "components": {
+      "openblocks:crayon_color": "cyan"
+    },
+    "count": 1,
+    "id": "openblocks:crayon"
+  }
+}

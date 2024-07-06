@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:blue_dye"
+    },
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:ender_eye"
+    },
+    {
+      "tag": "c:slimeballs"
+    }
+  ],
+  "result": {
+    "components": {
+      "openblocks:crayon_color": "blue"
+    },
+    "count": 1,
+    "id": "openblocks:crayon"
+  }
+}

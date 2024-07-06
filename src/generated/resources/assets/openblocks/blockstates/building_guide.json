@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "openblocks:block/building_guide"
+    }
+  }
+}

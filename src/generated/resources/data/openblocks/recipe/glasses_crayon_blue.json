@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "components": {
+        "openblocks:crayon_color": "blue"
+      },
+      "items": "openblocks:crayon"
+    },
+    {
+      "item": "minecraft:paper"
+    }
+  ],
+  "result": {
+    "components": {
+      "openblocks:crayon_color": "blue"
+    },
+    "count": 1,
+    "id": "openblocks:glasses_crayon"
+  }
+}

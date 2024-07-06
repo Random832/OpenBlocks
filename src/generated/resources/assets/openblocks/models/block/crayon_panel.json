@@ -1,0 +1,6 @@
+{
+  "parent": "openblocks:block/imaginary_half",
+  "textures": {
+    "full_panel": "openblocks:block/crayon_panel"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "e": {
+      "item": "minecraft:ender_pearl"
+    },
+    "g": {
+      "tag": "c:glass_blocks/cheap"
+    },
+    "r": {
+      "tag": "c:dusts/redstone"
+    },
+    "t": {
+      "item": "minecraft:torch"
+    }
+  },
+  "pattern": [
+    "grg",
+    "ete",
+    "grg"
+  ],
+  "result": {
+    "count": 1,
+    "id": "openblocks:building_guide"
+  }
+}

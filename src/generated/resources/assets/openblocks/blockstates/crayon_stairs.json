@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "openblocks:block/crayon_stairs",
+      "y": 270
+    },
+    "facing=north": {
+      "model": "openblocks:block/crayon_stairs",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "openblocks:block/crayon_stairs"
+    },
+    "facing=west": {
+      "model": "openblocks:block/crayon_stairs",
+      "y": 90
+    }
+  }
+}

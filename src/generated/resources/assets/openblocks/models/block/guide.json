@@ -1,0 +1,8 @@
+{
+  "parent": "openblocks:block/template_guide",
+  "textures": {
+    "end": "openblocks:block/guide_top",
+    "side": "openblocks:block/guide_side",
+    "torch": "openblocks:block/guide_center_normal"
+  }
+}

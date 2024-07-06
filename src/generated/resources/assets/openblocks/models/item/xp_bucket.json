@@ -1,0 +1,5 @@
+{
+  "parent": "neoforge:item/bucket_drip",
+  "fluid": "openblocks:xp_juice",
+  "loader": "neoforge:fluid_container"
+}

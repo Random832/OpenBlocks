@@ -1,0 +1,6 @@
+{
+  "parent": "openblocks:block/imaginary_block",
+  "textures": {
+    "block": "openblocks:block/pencil_block"
+  }
+}
