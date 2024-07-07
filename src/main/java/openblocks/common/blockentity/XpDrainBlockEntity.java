@@ -6,13 +6,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import openblocks.lib.blockentity.OpenTileEntity;
 import openblocks.lib.utils.EnchantmentUtils;
 import openblocks.lib.utils.FluidXpUtils;
 import openblocks.OpenBlocks;
 import openblocks.lib.utils.BlockUtils;
-import openblocks.lib.utils.CompatibilityUtils;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class XpDrainBlockEntity extends OpenTileEntity {
                 final BlockPos down = getBlockPos().below();
 
                 if (level.isLoaded(down)) {
-                    IFluidHandler maybeHandler = CompatibilityUtils.getFluidHandler(level, down, Direction.UP);
+                    IFluidHandler maybeHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, down, Direction.UP);
 
                     if (maybeHandler != null) {
                         for (ExperienceOrb orb : xpOrbsOnGrid)

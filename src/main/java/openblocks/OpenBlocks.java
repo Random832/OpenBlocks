@@ -40,6 +40,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.*;
@@ -63,6 +64,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Mod(OpenBlocks.MODID)
@@ -70,7 +72,7 @@ import java.util.function.Supplier;
 public class OpenBlocks {
 	public static final String MODID = "openblocks";
 
-    public static DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+	public static DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
 	public static DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
 	static DeferredRegister<CreativeModeTab> CREATIVE = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 	public static DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, MODID);
@@ -80,6 +82,7 @@ public class OpenBlocks {
 	static DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, MODID);
 	static DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, MODID);
 
+	//region Blocks
 	public static final DeferredBlock<TankBlock> TANK_BLOCK = BLOCKS.register("tank", () ->
 			new TankBlock(Block.Properties.ofFullCopy(Blocks.GLASS).noOcclusion()));
 	public static final DeferredBlock<XpDrainBlock> DRAIN_BLOCK = BLOCKS.registerBlock("xp_drain", XpDrainBlock::new, Block.Properties.ofFullCopy(Blocks.GLASS).noOcclusion());
@@ -92,7 +95,6 @@ public class OpenBlocks {
 	public static final DeferredBlock<ImaginaryBlock> PENCIL_BLOCK = BLOCKS.registerBlock("pencil_block", ImaginaryBlock::new, ImaginaryBlock.makeProperties());
 	public static final DeferredBlock<ImaginaryBlock> PENCIL_STAIRS = BLOCKS.registerBlock("pencil_stairs", ImaginaryBlock.Stair::new, ImaginaryBlock.makeProperties());
 	public static final DeferredBlock<ImaginaryBlock> PENCIL_PANEL = BLOCKS.registerBlock("pencil_panel", ImaginaryBlock.Panel::new, ImaginaryBlock.makeProperties());
-
 	public static final DeferredBlock<BigButtonBlock> BIG_STONE_BUTTON = BLOCKS.registerBlock(BlockSetType.STONE.name() + "_big_button", p -> new BigButtonBlock(BlockSetType.STONE, 20, p), Block.Properties.ofFullCopy(Blocks.STONE_BUTTON));
 	public static final DeferredBlock<BigButtonBlock> BIG_OAK_BUTTON = woodBigButton(BlockSetType.OAK);
 	public static final DeferredBlock<BigButtonBlock> BIG_SPRUCE_BUTTON = woodBigButton(BlockSetType.SPRUCE);
@@ -103,44 +105,111 @@ public class OpenBlocks {
 	public static final DeferredBlock<BigButtonBlock> BIG_DARK_OAK_BUTTON = woodBigButton(BlockSetType.DARK_OAK);
 	public static final DeferredBlock<BigButtonBlock> BIG_MANGROVE_BUTTON = woodBigButton(BlockSetType.MANGROVE);
 	public static final DeferredBlock<BigButtonBlock> BIG_BAMBOO_BUTTON = woodBigButton(BlockSetType.BAMBOO);
+	public static final DeferredBlock<LiquidBlock> XP_JUICE_BLOCK = BLOCKS.register("xp_juice", () ->
+			new LiquidBlock((FlowingFluid) OpenBlocks.XP_JUICE_STILL.value(), BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.COLOR_LIGHT_GREEN)));
 
 	private static DeferredBlock<BigButtonBlock> woodBigButton(BlockSetType type) {
 		return BLOCKS.registerBlock(type.name() + "_big_button", p -> new BigButtonBlock(type, 30, p), Block.Properties.ofFullCopy(Blocks.OAK_BUTTON));
 	}
+	//endregion
 
-
+	//region Block Entities
 	private static @NotNull <T extends BlockEntity> DeferredHolder<BlockEntityType<?>, BlockEntityType<T>> registerBlockEntity(BlockEntityType.BlockEntitySupplier<T> factory, DeferredBlock<?>... block) {
 		//noinspection DataFlowIssue
-
 		return BLOCK_ENTITIES.register(block[0].getKey().location().getPath(),
 				() -> BlockEntityType.Builder.of(factory, Arrays.stream(block).map(Supplier::get).toArray(Block[]::new)).build(null));
 	}
 
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TankBlockEntity>> TANK_BE =
-			registerBlockEntity(TankBlockEntity::new, TANK_BLOCK);
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<XpDrainBlockEntity>> DRAIN_BE =
-			registerBlockEntity(XpDrainBlockEntity::new, DRAIN_BLOCK);
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TileEntityGuide>> GUIDE_BE =
-			registerBlockEntity(TileEntityGuide::new, GUIDE_BLOCK);
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TileEntityBuilderGuide>> BUILDER_GUIDE_BE =
-			registerBlockEntity(TileEntityBuilderGuide::new, BUILDER_GUIDE_BLOCK);
-	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ImaginaryBlockEntity>> IMAGINARY_BE =
-			registerBlockEntity(ImaginaryBlockEntity::new, CRAYON_BLOCK, CRAYON_STAIRS, CRAYON_PANEL, PENCIL_BLOCK, PENCIL_STAIRS, PENCIL_PANEL);
+	public static final Supplier<BlockEntityType<TankBlockEntity>> TANK_BE = registerBlockEntity(TankBlockEntity::new, TANK_BLOCK);
+	public static final Supplier<BlockEntityType<XpDrainBlockEntity>> DRAIN_BE = registerBlockEntity(XpDrainBlockEntity::new, DRAIN_BLOCK);
+	public static final Supplier<BlockEntityType<TileEntityGuide>> GUIDE_BE = registerBlockEntity(TileEntityGuide::new, GUIDE_BLOCK);
+	public static final Supplier<BlockEntityType<TileEntityBuilderGuide>> BUILDER_GUIDE_BE = registerBlockEntity(TileEntityBuilderGuide::new, BUILDER_GUIDE_BLOCK);
+	public static final Supplier<BlockEntityType<ImaginaryBlockEntity>> IMAGINARY_BE = registerBlockEntity(ImaginaryBlockEntity::new,
+			CRAYON_BLOCK, CRAYON_STAIRS, CRAYON_PANEL, PENCIL_BLOCK, PENCIL_STAIRS, PENCIL_PANEL);
+	//endregion
 
+	//region Components
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> ACTIVE_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"active", b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<DyeColor>> IMAGINARY_COLOR = DATA_COMPONENTS.registerComponentType(
+			"crayon_color", b -> b.persistent(DyeColor.CODEC).networkSynchronized(DyeColor.STREAM_CODEC));
+	public static final Supplier<DataComponentType<FluidStack>> FLUID_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"fluid", b -> b.persistent(FluidStack.OPTIONAL_CODEC));
+	public static final Supplier<DataComponentType<ImaginaryPlacementMode>> IMAGINARY_MODE = DATA_COMPONENTS.registerComponentType(
+			"placement_mode", b -> b.persistent(ImaginaryPlacementMode.CODEC));
+	public static final Supplier<DataComponentType<GlobalPos>> TARGET_POS_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"target_pos", b -> b.persistent(GlobalPos.CODEC));
+	public static final Supplier<DataComponentType<Direction>> TARGET_FACE_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"target_face", b -> b.persistent(Direction.CODEC));
+	public static final Supplier<DataComponentType<Component>> TARGET_NAME_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"target_name", b -> b.persistent(ComponentSerialization.CODEC));
+	//endregion
+
+	//region Items
 	public static final DeferredItem<SlimalyzerItem> SLIMALYZER = ITEMS.registerItem("slimalyzer", SlimalyzerItem::new);
 	public static final DeferredItem<Item> TASTY_CLAY = ITEMS.registerItem("tasty_clay", TastyClayItem::new, new Item.Properties()
 			.food(new FoodProperties.Builder()
 					.nutrition(1).saturationModifier(0.1f)
 					.fast().alwaysEdible().build()));
-	public static final DeferredItem<ImaginationGlassesItem> PENCIL_GLASSES = ITEMS.registerItem("glasses_pencil", ImaginationGlassesItem.Pencil::new, new Item.Properties());
-	public static final DeferredItem<ImaginationGlassesItem> CRAYON_GLASSES = ITEMS.registerItem("glasses_crayon", ImaginationGlassesItem.Crayon::new, new Item.Properties());
-	public static final DeferredItem<ImaginationGlassesItem> TECHNICOLOR_GLASSES = ITEMS.registerItem("glasses_technicolor", ImaginationGlassesItem.Technicolor::new, new Item.Properties());
-	public static final DeferredItem<ImaginationGlassesItem> BASTARD_GLASSES = ITEMS.registerItem("glasses_admin", ImaginationGlassesItem.Bastard::new, new Item.Properties());
-	public static final DeferredItem<PedometerItem> PEDOMETER = ITEMS.registerItem("pedometer", PedometerItem::new);
-	public static final DeferredItem<WrenchItem> WRENCH = ITEMS.registerItem("wrench", WrenchItem::new);
-	public static final DeferredItem<CursorItem> CURSOR = ITEMS.registerItem("cursor", CursorItem::new);
+	public static final DeferredItem<ImaginationGlassesItem> PENCIL_GLASSES = registerNonStackingItem("glasses_pencil", ImaginationGlassesItem.Pencil::new);
 
-	public static final Supplier<CreativeModeTab> CREATIVE_TAB = CREATIVE.register(MODID, () ->
+	private static <T extends Item> DeferredItem<T> registerNonStackingItem(String name, Function<Item.Properties, T> factory) {
+		return ITEMS.registerItem(name, factory, new Item.Properties().stacksTo(1));
+	}
+
+	public static final DeferredItem<ImaginationGlassesItem> CRAYON_GLASSES = registerNonStackingItem("glasses_crayon", ImaginationGlassesItem.Crayon::new);
+	public static final DeferredItem<ImaginationGlassesItem> TECHNICOLOR_GLASSES = registerNonStackingItem("glasses_technicolor", ImaginationGlassesItem.Technicolor::new);
+	public static final DeferredItem<ImaginationGlassesItem> BASTARD_GLASSES = registerNonStackingItem("glasses_admin", ImaginationGlassesItem.Bastard::new);
+	public static final DeferredItem<PedometerItem> PEDOMETER = registerNonStackingItem("pedometer", PedometerItem::new);
+	public static final DeferredItem<WrenchItem> WRENCH = registerNonStackingItem("wrench", WrenchItem::new);
+	public static final DeferredItem<CursorItem> CURSOR = registerNonStackingItem("cursor", CursorItem::new);
+	public static final DeferredItem<BucketItem> XP_BUCKET =
+			ITEMS.register("xp_bucket", () -> new BucketItem(OpenBlocks.XP_JUICE_STILL.value(), new Item.Properties()));
+	// todo can we make durability configurable?
+	public static final DeferredItem<ImaginaryDrawItem> PENCIL = ITEMS.registerItem("pencil",
+			p -> new ImaginaryDrawItem(p, PENCIL_BLOCK, PENCIL_PANEL, PENCIL_STAIRS),
+			new Item.Properties().durability(40));
+	public static final DeferredItem<ImaginaryDrawItem> CRAYON = ITEMS.registerItem("crayon",
+			p -> new ImaginaryDrawItem(p, CRAYON_BLOCK, CRAYON_PANEL, CRAYON_STAIRS),
+			new Item.Properties().durability(40));
+
+
+	static {
+		// we don't need fields for these
+		registerSimpleBlockItem(TANK_BLOCK, TankItem::new, new Item.Properties()
+				.component(FLUID_COMPONENT, FluidStack.EMPTY));
+		registerSimpleBlockItem(GUIDE_BLOCK, ItemGuide::new);
+		registerSimpleBlockItem(BUILDER_GUIDE_BLOCK, ItemGuide::new);
+		registerSimpleBlockItem(DRAIN_BLOCK);
+		registerSimpleBlockItem(LADDER);
+		registerSimpleBlockItem(BIG_STONE_BUTTON);
+		registerSimpleBlockItem(BIG_OAK_BUTTON);
+		registerSimpleBlockItem(BIG_SPRUCE_BUTTON);
+		registerSimpleBlockItem(BIG_BIRCH_BUTTON);
+		registerSimpleBlockItem(BIG_JUNGLE_BUTTON);
+		registerSimpleBlockItem(BIG_ACACIA_BUTTON);
+		registerSimpleBlockItem(BIG_CHERRY_BUTTON);
+		registerSimpleBlockItem(BIG_DARK_OAK_BUTTON);
+		registerSimpleBlockItem(BIG_MANGROVE_BUTTON);
+		registerSimpleBlockItem(BIG_BAMBOO_BUTTON);
+	}
+
+	private static <T extends Block> void registerSimpleBlockItem(DeferredBlock<T> block, BiFunction<T, Item.Properties, Item> factory, Item.Properties properties) {
+		ITEMS.register(block.getId().getPath(), () -> factory.apply(block.get(), properties));
+	}
+
+	private static <T extends Block> void registerSimpleBlockItem(DeferredBlock<T> block, BiFunction<T, Item.Properties, Item> factory) {
+		registerSimpleBlockItem(block, factory, new Item.Properties());
+	}
+
+	private static void registerSimpleBlockItem(DeferredBlock<?> block) {
+		registerSimpleBlockItem(block, BlockItem::new, new Item.Properties());
+	}
+	// endregion
+
+	//region Creative Tab
+	static {
+		CREATIVE.register(MODID, () ->
 			CreativeModeTab.builder().title(Component.literal("OpenBlocks")).displayItems((pParameters, pOutput) -> {
 				Set<Item> visited = new HashSet<>();
 				for (DeferredHolder<Block, ? extends Block> entry : BLOCKS.getEntries()) {
@@ -155,6 +224,8 @@ public class OpenBlocks {
 				}
 				for (DeferredHolder<Item, ? extends Item> entry : ITEMS.getEntries()) {
 					Item item = entry.get();
+					if (visited.contains(item))
+						continue;
 					if (item instanceof ICreativeVariantsItem vi)
 						vi.fillItemGroup(pOutput);
 					else
@@ -162,33 +233,17 @@ public class OpenBlocks {
 					visited.add(item);
 				}
 			}).icon(() -> TASTY_CLAY.get().getDefaultInstance()).build());
+		}
+	// endregion
 
-	// todo make durability configurable
-	public static final DeferredItem<ImaginaryDrawItem> PENCIL = ITEMS.registerItem("pencil",
-			p -> new ImaginaryDrawItem(p, PENCIL_BLOCK, PENCIL_PANEL, PENCIL_STAIRS),
-			new Item.Properties().durability(40));
-	public static final DeferredItem<ImaginaryDrawItem> CRAYON = ITEMS.registerItem("crayon",
-			p -> new ImaginaryDrawItem(p, CRAYON_BLOCK, CRAYON_PANEL, CRAYON_STAIRS),
-			new Item.Properties().durability(40));
-
-	public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> ACTIVE_COMPONENT = DATA_COMPONENTS.registerComponentType(
-			"active", b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
-	public static final DeferredHolder<DataComponentType<?>, DataComponentType<DyeColor>> IMAGINARY_COLOR = DATA_COMPONENTS.registerComponentType(
-			"crayon_color", b -> b.persistent(DyeColor.CODEC).networkSynchronized(DyeColor.STREAM_CODEC));
-	public static final Supplier<DataComponentType<ImaginaryPlacementMode>> IMAGINARY_MODE = DATA_COMPONENTS.registerComponentType(
-			"placement_mode", b -> b.persistent(ImaginaryPlacementMode.CODEC));
-	public static final Supplier<DataComponentType<GlobalPos>> TARGET_POS_COMPONENT = DATA_COMPONENTS.registerComponentType(
-			"target_pos", b -> b.persistent(GlobalPos.CODEC));
-	public static final Supplier<DataComponentType<Direction>> TARGET_FACE_COMPONENT = DATA_COMPONENTS.registerComponentType(
-			"target_face", b -> b.persistent(Direction.CODEC));
-	public static final Supplier<DataComponentType<Component>> TARGET_NAME_COMPONENT = DATA_COMPONENTS.registerComponentType(
-			"target_name", b -> b.persistent(ComponentSerialization.CODEC));
-
+	//region Attachments
 	public static final Supplier<AttachmentType<BrickManager.BowelContents>> BRICK_ATTACHMENT = ATTACHMENTS.register("bowels", () ->
 			AttachmentType.builder(BrickManager.BowelContents::new).serialize(BrickManager.BowelContents.CODEC).build());
 	public static final Supplier<AttachmentType<PedometerHandler.PedometerState>> PEDOMETER_ATTACHMENT = ATTACHMENTS.register("pedometer", () ->
 			AttachmentType.builder(PedometerHandler.PedometerState::new).build());
+	//endregion
 
+	//region Sounds
 	//public static final Supplier<SoundEvent> SOUND_TARGET_OPEN = registerSound("target.open");
 	//public static final Supplier<SoundEvent> SOUND_TARGET_CLOSE = registerSound("target.close");
 	//public static final Supplier<SoundEvent> SOUND_SQUEEGEE_USE = registerSound("squeegee.use");
@@ -212,19 +267,49 @@ public class OpenBlocks {
 	private static DeferredHolder<SoundEvent, SoundEvent> registerSound(String name) {
 		return SOUND_EVENTS.register(name, SoundEvent::createVariableRangeEvent);
 	}
-
-	private static final String XP_JUICE_ID = "xp_juice";
-	public static final DeferredBlock<LiquidBlock> XP_JUICE_BLOCK = BLOCKS.register(XP_JUICE_ID, () ->
-			new LiquidBlock((FlowingFluid) OpenBlocks.XP_JUICE_STILL.value(), BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.COLOR_LIGHT_GREEN)));
-	public static final DeferredItem<BucketItem> XP_BUCKET =
-			ITEMS.register("xp_bucket", () -> new BucketItem(OpenBlocks.XP_JUICE_STILL.value(), new Item.Properties()));
-	public static Holder<FluidType> XP_JUICE_TYPE = DeferredHolder.create(NeoForgeRegistries.Keys.FLUID_TYPES, modLoc(XP_JUICE_ID));
-	public static Holder<Fluid> XP_JUICE_STILL = DeferredHolder.create(Registries.FLUID, modLoc(XP_JUICE_ID));
-	public static Holder<Fluid> XP_JUICE_FLOWING = DeferredHolder.create(Registries.FLUID, modLoc(XP_JUICE_ID + "_flowing"));
+	// endregion
 
 	public static ResourceLocation modLoc(String path) {
 		return ResourceLocation.fromNamespaceAndPath(MODID, path);
 	}
+
+	//region Fluids
+	public static Holder<FluidType> XP_JUICE_TYPE = FLUID_TYPES.register("xp_juice", () -> new FluidType(FluidType.Properties.create().lightLevel(15)) {
+		@Override
+		public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+			consumer.accept(new IClientFluidTypeExtensions() {
+				private static final ResourceLocation TEXTURE_STILL = modLoc("block/xp_juice_still");
+				private static final ResourceLocation TEXTURE_FLOWING = modLoc("block/xp_juice_flowing");
+
+				@Override
+				public ResourceLocation getStillTexture() {
+					return TEXTURE_STILL;
+				}
+
+				@Override
+				public ResourceLocation getFlowingTexture() {
+					return TEXTURE_FLOWING;
+				}
+			});
+		}
+	});
+
+	// there is no elegant way to avoid repeating this twice.
+	public static Holder<Fluid> XP_JUICE_STILL = FLUIDS.register("xp_juice",
+			() -> new BaseFlowingFluid.Source(new BaseFlowingFluid.Properties(
+					XP_JUICE_TYPE::value,
+					OpenBlocks.XP_JUICE_STILL::value,
+					OpenBlocks.XP_JUICE_FLOWING::value)
+					.block(XP_JUICE_BLOCK)
+					.bucket(XP_BUCKET)));
+	public static Holder<Fluid> XP_JUICE_FLOWING = FLUIDS.register("xp_juice_flowing",
+			() -> new BaseFlowingFluid.Flowing(new BaseFlowingFluid.Properties(
+					XP_JUICE_TYPE::value,
+					OpenBlocks.XP_JUICE_STILL::value,
+					OpenBlocks.XP_JUICE_FLOWING::value)
+					.block(XP_JUICE_BLOCK)
+					.bucket(XP_BUCKET)));
+	// endregion
 
 	public OpenBlocks(IEventBus modEventBus, ModContainer modContainer) {
 		modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -237,67 +322,6 @@ public class OpenBlocks {
 		FLUIDS.register(modEventBus);
 		FLUID_TYPES.register(modEventBus);
 		SOUND_EVENTS.register(modEventBus);
-	}
-
-	private static <T extends Block> void registerSimpleBlockItem(RegisterEvent evt, DeferredBlock<T> block, BiFunction<T, Item.Properties, Item> factory) {
-		evt.register(Registries.ITEM, block.getKey().location(), () -> factory.apply(block.get(), new Item.Properties()));
-	}
-
-	@SubscribeEvent
-	public static void register(RegisterEvent evt) {
-		if (evt.getRegistryKey() == Registries.ITEM) {
-			registerSimpleBlockItem(evt, TANK_BLOCK, TankItem::new);
-			registerSimpleBlockItem(evt, GUIDE_BLOCK, ItemGuide::new);
-			registerSimpleBlockItem(evt, BUILDER_GUIDE_BLOCK, ItemGuide::new);
-			registerSimpleBlockItem(evt, DRAIN_BLOCK);
-			registerSimpleBlockItem(evt, LADDER);
-			registerSimpleBlockItem(evt, BIG_STONE_BUTTON);
-			registerSimpleBlockItem(evt, BIG_OAK_BUTTON);
-			registerSimpleBlockItem(evt, BIG_SPRUCE_BUTTON);
-			registerSimpleBlockItem(evt, BIG_BIRCH_BUTTON);
-			registerSimpleBlockItem(evt, BIG_JUNGLE_BUTTON);
-			registerSimpleBlockItem(evt, BIG_ACACIA_BUTTON);
-			registerSimpleBlockItem(evt, BIG_CHERRY_BUTTON);
-			registerSimpleBlockItem(evt, BIG_DARK_OAK_BUTTON);
-			registerSimpleBlockItem(evt, BIG_MANGROVE_BUTTON);
-			registerSimpleBlockItem(evt, BIG_BAMBOO_BUTTON);
-		}
-		if (evt.getRegistryKey() == NeoForgeRegistries.Keys.FLUID_TYPES) {
-			ResourceLocation textureS = modLoc("block/" + XP_JUICE_ID + "_still");
-			ResourceLocation textureF = modLoc("block/" + XP_JUICE_ID + "_flowing");
-			evt.register(NeoForgeRegistries.Keys.FLUID_TYPES, modLoc(XP_JUICE_ID), () -> {
-				FluidType.Properties props = FluidType.Properties.create()
-						.lightLevel(15);
-				return new FluidType(props) {
-					@Override
-					public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-						consumer.accept(new IClientFluidTypeExtensions() {
-							@Override
-							public ResourceLocation getStillTexture() {
-								return textureS;
-							}
-
-							@Override
-							public ResourceLocation getFlowingTexture() {
-								return textureF;
-							}
-						});
-					}
-				};
-			});
-		}
-		if (evt.getRegistryKey() == Registries.FLUID) {
-			BaseFlowingFluid.Properties props =
-					new BaseFlowingFluid.Properties(XP_JUICE_TYPE::value, XP_JUICE_STILL::value, XP_JUICE_FLOWING::value)
-							.block(XP_JUICE_BLOCK)
-							.bucket(XP_BUCKET);
-			evt.register(Registries.FLUID, modLoc(XP_JUICE_ID), () -> new BaseFlowingFluid.Source(props));
-			evt.register(Registries.FLUID, modLoc(XP_JUICE_ID + "_flowing"), () -> new BaseFlowingFluid.Flowing(props));
-		}
-	}
-
-	private static void registerSimpleBlockItem(RegisterEvent evt, DeferredBlock<?> bigStoneButton) {
-		registerSimpleBlockItem(evt, bigStoneButton, BlockItem::new);
 	}
 
 	@SubscribeEvent

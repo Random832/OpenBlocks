@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.fluids.*;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -49,7 +50,6 @@ import openblocks.client.renderer.blockentity.tank.ITankConnections;
 import openblocks.client.renderer.blockentity.tank.ITankRenderFluidData;
 import openblocks.client.renderer.blockentity.tank.NeighbourMap;
 import openblocks.client.renderer.blockentity.tank.TankRenderLogic;
-import openblocks.lib.utils.CompatibilityUtils;
 
 public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity, IPlaceAwareTile, INeighbourAwareTile, ICustomBreakDrops {
 
@@ -171,7 +171,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	@Override
 	public void onBlockPlacedBy(BlockState state, LivingEntity placer, ItemStack stack) {
-		CompatibilityUtils.updateTankFromStack(stack, this.tank);
+		this.tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
 	}
 
 
@@ -195,7 +195,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	@Override
 	public ItemInteractionResult useItemOn(Player player, InteractionHand hand, BlockHitResult hit, ItemStack heldItem) {
-		if (FluidUtil.interactWithFluidHandler(player, hand, tank))
+		if (FluidUtil.interactWithFluidHandler(player, hand, level, worldPosition, hit.getDirection()))
 			return ItemInteractionResult.SUCCESS;
 		else
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -210,7 +210,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 			int requiredXp = Mth.ceil(player.getXpNeededForNextLevel() * (1 - player.experienceProgress));
 			int requiredXpFluid = converter.xpToFluid(requiredXp);
 
-			IFluidHandler handler = CompatibilityUtils.getFluidHandler(level, worldPosition, null);
+			IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, worldPosition, null);
 			FluidStack drained = handler.drain(requiredXpFluid, IFluidHandler.FluidAction.SIMULATE);
 			if (!drained.isEmpty()) {
 				int xp = converter.fluidToXp(drained.getAmount());
@@ -398,7 +398,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 		ItemStack stack = new ItemStack(OpenBlocks.TANK_BLOCK);
 
 		if (tank.getFluidAmount() > 0)
-			CompatibilityUtils.saveTankToStack(tank, stack);
+			stack.set(OpenBlocks.FLUID_COMPONENT, tank.getFluid());
 
 		return List.of(stack);
 	}

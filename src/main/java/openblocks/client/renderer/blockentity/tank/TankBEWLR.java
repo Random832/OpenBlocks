@@ -9,7 +9,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -18,12 +17,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.RenderTypeHelper;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.fluids.FluidStack;
 import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
-import openblocks.lib.utils.CompatibilityUtils;
+import openblocks.common.item.TankItem;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
     private @Nullable TankBlockEntity TANK = null;
@@ -43,7 +42,7 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
             TANK.initializeForBewlr();
         }
         TANK.setLevel(Minecraft.getInstance().level);
-        CompatibilityUtils.updateTankFromStack(pStack, TANK.getTank());
+        TANK.getTank().setFluid(pStack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
 
         // this isn't available at init for some reason
         BlockModelShaper blockModelShaper = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper();

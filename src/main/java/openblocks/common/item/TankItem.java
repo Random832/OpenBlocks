@@ -23,10 +23,10 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import openblocks.Config;
+import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
 import openblocks.lib.item.ICreativeVariantsItem;
 import openblocks.lib.model.IItemTexture;
-import openblocks.lib.utils.CompatibilityUtils;
 import openblocks.client.renderer.blockentity.tank.TankBEWLR;
 
 public class TankItem extends BlockItem implements ICreativeVariantsItem {
@@ -229,12 +229,12 @@ public class TankItem extends BlockItem implements ICreativeVariantsItem {
 
 	public static FluidTank readTank(ItemStack stack) {
 		FluidTank tank = new FluidTank(TankBlockEntity.getTankCapacity());
-		CompatibilityUtils.updateTankFromStack(stack, tank);
-		return tank;
+        tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
+        return tank;
 	}
 
 	private static void saveTank(@Nonnull ItemStack container, FluidTank tank) {
-		CompatibilityUtils.saveTankToStack(tank, container);
+		container.set(OpenBlocks.FLUID_COMPONENT, tank.getFluid());
 	}
 
 	@Override
