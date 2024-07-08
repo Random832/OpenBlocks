@@ -15,8 +15,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,7 +22,6 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -90,13 +87,13 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	private boolean hasPendingFluidTransfers = true;
 
-	private int ticksSinceLastSync = hashCode() % SYNC_THRESHOLD;
+	private int ticksSinceLastSync = (hashCode() & 0x7fffffff) % SYNC_THRESHOLD;
 
 	private boolean needsSync;
 
-	private int ticksSinceLastNeighbourUpdate = hashCode() % UPDATE_THRESHOLD;
+	private int ticksSinceLastSignalUpdate = (hashCode() & 0x7fffffff) % UPDATE_THRESHOLD;
 
-	private boolean hasPendingNeighbourUpdate;
+	private boolean hasPendingSignalUpdate;
 
 	private boolean needsNeighbourRecheck;
 
@@ -231,7 +228,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	public void tick() {
 		ticksSinceLastSync++;
-		ticksSinceLastNeighbourUpdate++;
+		ticksSinceLastSignalUpdate++;
 
 		if (Config.shouldTanksUpdate && !level.isClientSide && hasPendingFluidTransfers) {
 			hasPendingFluidTransfers = false;
@@ -244,7 +241,16 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 			if (!contents.isEmpty()) {
 				tryBalanceNeighbors(contents);
+			} else {
+				// others might need to transfer to us.
+				for (Direction direction : Direction.Plane.HORIZONTAL)
+					if(level.getBlockEntity(worldPosition.relative(direction)) instanceof TankBlockEntity te)
+						te.hasPendingFluidTransfers = true;
 			}
+
+			if(contents.getAmount() < getTankCapacity())
+				if(level.getBlockEntity(worldPosition.above()) instanceof TankBlockEntity te)
+					te.hasPendingFluidTransfers = true;
 
 			needsSync = true;
 			markUpdated();
@@ -255,9 +261,9 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 			sync();
 		}
 
-		if (hasPendingNeighbourUpdate && ticksSinceLastNeighbourUpdate > UPDATE_THRESHOLD) {
-			hasPendingNeighbourUpdate = false;
-			ticksSinceLastNeighbourUpdate = 0;
+		if (hasPendingSignalUpdate && ticksSinceLastSignalUpdate > UPDATE_THRESHOLD) {
+			hasPendingSignalUpdate = false;
+			ticksSinceLastSignalUpdate = 0;
 			level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
 		}
 
@@ -286,6 +292,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	private void tryBalanceNeighbors(FluidStack contents) {
 		List<TankBlockEntity> neighbors = Lists.newArrayList();
+
 		tryGetNeighbor(neighbors, contents, Direction.NORTH);
 		tryGetNeighbor(neighbors, contents, Direction.SOUTH);
 		tryGetNeighbor(neighbors, contents, Direction.EAST);
@@ -325,17 +332,17 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 		}
 	}
 
-	private void notifyNeigbours() {
-		hasPendingNeighbourUpdate = true;
+	private void updateSignal() {
+		hasPendingSignalUpdate = true;
 	}
 
 	private void tankChanged() {
-		notifyNeigbours();
+		updateSignal();
 		needsSync = true;
 	}
 
 	private void markContentsUpdated() {
-		notifyNeigbours();
+		updateSignal();
 		hasPendingFluidTransfers = true;
 	}
 
@@ -440,13 +447,6 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	void sync() {
 		level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
-		// TODO test and cleanup
-		//if (level.isClientSide) return;
-		//ChunkPos chunkPos = new ChunkPos(worldPosition);
-		//Packet<ClientGamePacketListener> packet = getUpdatePacket();
-		//for (ServerPlayer player : ((ServerLevel) level).getChunkSource().chunkMap.getPlayers(chunkPos, false)) {
-		//	player.connection.send(packet);
-		//}
 	}
 
 	public void initializeForBewlr() {
