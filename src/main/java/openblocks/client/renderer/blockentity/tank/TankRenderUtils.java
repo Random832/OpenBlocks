@@ -47,7 +47,7 @@ public class TankRenderUtils {
 	}
 
 	public static float calculateRenderHeight(float time, float phase, float level) {
-		// prevent seams when tank in in the middle of column
+		// prevent seams when tank in the middle of column
 		if (level >= 1.0f) { return 1.0f; }
 		level = clampLevel(level) + calculateWaveAmplitude(time, phase);
 
@@ -59,7 +59,7 @@ public class TankRenderUtils {
 	@Nullable
 	public static BlockEntity getTileEntitySafe(Level world, BlockPos pos) {
 		if (world.isLoaded(pos)) {
-			LevelChunk chunk = world.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
+			LevelChunk chunk = world.getChunkAt(pos);
 			return chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
 		}
 

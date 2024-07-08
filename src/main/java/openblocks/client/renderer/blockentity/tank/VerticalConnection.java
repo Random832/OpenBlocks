@@ -1,12 +1,14 @@
 package openblocks.client.renderer.blockentity.tank;
 
+import net.minecraft.core.Direction;
 import net.neoforged.neoforge.fluids.FluidStack;
+import openblocks.common.blockentity.TankBlockEntity;
 
 public class VerticalConnection extends GridConnection {
 
-	private FluidStack fluidTop;
+	private FluidStack fluidTop = FluidStack.EMPTY;
 
-	private FluidStack fluidBottom;
+	private FluidStack fluidBottom = FluidStack.EMPTY;
 
 	private boolean bottomIsFull;
 
@@ -23,7 +25,7 @@ public class VerticalConnection extends GridConnection {
 	}
 
 	public void clearTopFluid() {
-		this.fluidTop = null;
+		this.fluidTop = FluidStack.EMPTY;
 		this.isConnected = false;
 	}
 
@@ -34,17 +36,24 @@ public class VerticalConnection extends GridConnection {
 	}
 
 	public void clearBottomFluid() {
-		this.fluidBottom = null;
+		this.fluidBottom = FluidStack.EMPTY;
 		this.bottomIsFull = false;
 		this.isConnected = false;
 	}
 
 	private void updateConnection() {
-		boolean sameLiquid = fluidTop != null && fluidBottom != null && FluidStack.isSameFluidSameComponents(fluidTop, fluidBottom);
+		boolean sameLiquid = FluidStack.isSameFluidSameComponents(fluidTop, fluidBottom);
 		this.isConnected = sameLiquid && bottomIsFull;
 	}
 
 	public VerticalConnection(DoubledCoords coords) {
 		super(coords);
+	}
+
+	public void updateFluid(Direction direction, FluidStack fluid) {
+		switch(direction) {
+			case UP -> updateTopFluid(fluid);
+			case DOWN -> updateBottomFluid(fluid, fluid.getAmount() >= TankBlockEntity.getTankCapacity());
+		}
 	}
 }

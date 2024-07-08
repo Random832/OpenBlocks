@@ -119,7 +119,7 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 
 	@Override
 	protected @Nullable BlockEntityTicker<TankBlockEntity> makeTicker(Level level, BlockState state) {
-		return TankBlockEntity::tickerTick;
+		return level.isClientSide ? TankBlockEntity::clientTick : TankBlockEntity::serverTick;
 	}
 
 	@Override

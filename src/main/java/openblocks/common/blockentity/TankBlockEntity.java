@@ -36,6 +36,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import openblocks.Config;
 import openblocks.OpenBlocks;
+import openblocks.client.renderer.blockentity.tank.ITankConnections;
 import openblocks.lib.blockentity.ICustomBreakDrops;
 import openblocks.lib.blockentity.INeighbourAwareTile;
 import openblocks.lib.blockentity.IPlaceAwareTile;
@@ -43,7 +44,6 @@ import openblocks.lib.blockentity.OpenTileEntity;
 import openblocks.lib.model.variant.VariantModelState;
 import openblocks.lib.utils.EnchantmentUtils;
 import openblocks.lib.utils.FluidXpUtils;
-import openblocks.client.renderer.blockentity.tank.ITankConnections;
 import openblocks.client.renderer.blockentity.tank.ITankRenderFluidData;
 import openblocks.client.renderer.blockentity.tank.NeighbourMap;
 import openblocks.client.renderer.blockentity.tank.TankRenderLogic;
@@ -55,15 +55,23 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	@Override
 	public void clearRemoved() {
 		super.clearRemoved();
-
 		needsNeighbourRecheck = true;
-		if (level.isClientSide) renderLogic.initialize(level, worldPosition);
+	}
+
+	@Override
+	public void onLoad() {
+		super.onLoad();
+		if (level.isClientSide) {
+			renderLogic.initialize(level, worldPosition);
+			renderLogic.updateFluid(tank.getFluid());
+		}
 	}
 
 	@Override
 	public void setRemoved() {
 		super.setRemoved();
-		if (level.isClientSide) renderLogic.invalidateConnections();
+		if (level.isClientSide)
+			renderLogic.invalidateConnections();
 	}
 
 	@Nullable
@@ -96,8 +104,6 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	private boolean hasPendingSignalUpdate;
 
 	private boolean needsNeighbourRecheck;
-
-	private boolean needsSignalUpdate;
 
 	public TankBlockEntity(BlockPos pPos, BlockState pBlockState) {
 		super(OpenBlocks.TANK_BE.get(), pPos, pBlockState);
@@ -222,60 +228,56 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 		return InteractionResult.CONSUME;
 	}
 
-	public static void tickerTick(Level pLevel, BlockPos pPos, BlockState pState, TankBlockEntity pBlockEntity) {
-		pBlockEntity.tick();
-	}
+	public static void serverTick(Level level, BlockPos pos, BlockState state, TankBlockEntity be) {
+		be.ticksSinceLastSync++;
+		be.ticksSinceLastSignalUpdate++;
 
-	public void tick() {
-		ticksSinceLastSync++;
-		ticksSinceLastSignalUpdate++;
+		if (Config.shouldTanksUpdate && be.hasPendingFluidTransfers) {
+			be.hasPendingFluidTransfers = false;
 
-		if (Config.shouldTanksUpdate && !level.isClientSide && hasPendingFluidTransfers) {
-			hasPendingFluidTransfers = false;
-
-			FluidStack contents = tank.getFluid();
-			if (!contents.isEmpty() && worldPosition.getY() > level.getMinBuildHeight()) {
-				tryFillBottomTank(contents);
-				contents = tank.getFluid();
+			FluidStack contents = be.tank.getFluid();
+			if (!contents.isEmpty() && pos.getY() > level.getMinBuildHeight()) {
+				be.tryFillBottomTank(contents);
+				contents = be.tank.getFluid();
 			}
 
 			if (!contents.isEmpty()) {
-				tryBalanceNeighbors(contents);
+				be.tryBalanceNeighbors(contents);
 			} else {
 				// others might need to transfer to us.
 				for (Direction direction : Direction.Plane.HORIZONTAL)
-					if(level.getBlockEntity(worldPosition.relative(direction)) instanceof TankBlockEntity te)
+					if(level.getBlockEntity(pos.relative(direction)) instanceof TankBlockEntity te)
 						te.hasPendingFluidTransfers = true;
 			}
 
 			if(contents.getAmount() < getTankCapacity())
-				if(level.getBlockEntity(worldPosition.above()) instanceof TankBlockEntity te)
+				if(level.getBlockEntity(pos.above()) instanceof TankBlockEntity te)
 					te.hasPendingFluidTransfers = true;
 
-			needsSync = true;
-			markUpdated();
+			be.needsSync = true;
+			be.markUpdated();
 		}
 
-		if (needsSync && !level.isClientSide && ticksSinceLastSync > SYNC_THRESHOLD) {
-			needsSync = false;
-			sync();
+		if (be.needsSync && be.ticksSinceLastSync > SYNC_THRESHOLD) {
+			be.needsSync = false;
+			be.sync();
 		}
 
-		if (hasPendingSignalUpdate && ticksSinceLastSignalUpdate > UPDATE_THRESHOLD) {
-			hasPendingSignalUpdate = false;
-			ticksSinceLastSignalUpdate = 0;
-			level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+		if (be.hasPendingSignalUpdate && be.ticksSinceLastSignalUpdate > UPDATE_THRESHOLD) {
+			be.hasPendingSignalUpdate = false;
+			be.ticksSinceLastSignalUpdate = 0;
+			level.updateNeighbourForOutputSignal(pos, state.getBlock());
 		}
+	}
 
-		if (level.isClientSide)
-			renderLogic.validateConnections(level, worldPosition);
+	public static void clientTick(Level level, BlockPos pos, BlockState state, TankBlockEntity be) {
+		//be.renderLogic.validateConnections(level, pos);
 
-		if (needsNeighbourRecheck) {
-			// tank.updateNeighbours(level, worldPosition); // checked twice: this code didn't actually *do* anything
-			needsNeighbourRecheck = false;
+		if (be.needsNeighbourRecheck) {
+			be.needsNeighbourRecheck = false;
 			if (level.isClientSide) {
-				updateModelState();
-				level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
+				be.updateModelState();
+				level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
 			}
 		}
 	}

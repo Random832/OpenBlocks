@@ -1,7 +1,11 @@
 package openblocks.client.renderer.blockentity.tank;
 
 import com.google.common.collect.Maps;
+
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -18,8 +22,6 @@ public class TankRenderLogic {
 
 	private static class TankConnections implements ITankConnections {
 
-		private final FluidTank tank;
-
 		private final Map<Diagonal, DiagonalConnection> diagonalConnections;
 
 		private final Map<Direction, HorizontalConnection> horizontalConnections;
@@ -28,8 +30,7 @@ public class TankRenderLogic {
 
 		private final VerticalConnection bottomConnection;
 
-		public TankConnections(FluidTank tank, Map<Diagonal, DiagonalConnection> diagonalConnections, Map<Direction, HorizontalConnection> horizontalConnections, VerticalConnection topConnection, VerticalConnection bottomConnection) {
-			this.tank = tank;
+		public TankConnections(Map<Diagonal, DiagonalConnection> diagonalConnections, Map<Direction, HorizontalConnection> horizontalConnections, VerticalConnection topConnection, VerticalConnection bottomConnection) {
 			this.diagonalConnections = diagonalConnections;
 			this.horizontalConnections = horizontalConnections;
 			this.topConnection = topConnection;
@@ -52,7 +53,6 @@ public class TankRenderLogic {
 		}
 
 		@Override
-		@Nullable
 		public DiagonalConnection getDiagonalConnection(Diagonal dir) {
 			return diagonalConnections.get(dir);
 		}
@@ -66,16 +66,16 @@ public class TankRenderLogic {
 				e.getValue().updateFluid(e.getKey().getOpposite(), fluidStack);
 			}
 
-			topConnection.updateBottomFluid(fluidStack, tank.getSpace() == 0);
+			topConnection.updateBottomFluid(fluidStack, fluidStack.getAmount() == TankBlockEntity.getTankCapacity());
 			bottomConnection.updateTopFluid(fluidStack);
 		}
 
 		private static boolean checkConsistency(RenderConnection connection, BlockPos pos, Direction dir) {
-			return connection != null && connection.isPositionEqualTo(pos, dir);
+			return connection.isPositionEqualTo(pos, dir);
 		}
 
 		private static boolean checkConsistency(RenderConnection connection, BlockPos pos, Diagonal dir) {
-			return connection != null && connection.isPositionEqualTo(pos, dir);
+			return connection.isPositionEqualTo(pos, dir);
 		}
 
 		private boolean checkHorizontalConsistency(BlockPos pos, Direction dir) {
@@ -108,14 +108,10 @@ public class TankRenderLogic {
 				e.getValue().clearFluid(e.getKey().getOpposite());
 			}
 
-			if (topConnection != null) {
-				topConnection.clearBottomFluid();
-			}
+            topConnection.clearBottomFluid();
 
-			if (bottomConnection != null) {
-				bottomConnection.clearTopFluid();
-			}
-		}
+            bottomConnection.clearTopFluid();
+        }
 
 	}
 
@@ -286,16 +282,15 @@ public class TankRenderLogic {
 		tryCornerConnection(diagonalConnections, tankE, tankNE, tankN, Diagonal.NE);
 		tryCornerConnection(diagonalConnections, tankS, tankSE, tankE, Diagonal.SE);
 
-		return new TankConnections(tank, diagonalConnections, horizontalConnections, topConnection, bottomConnection);
+		return new TankConnections(diagonalConnections, horizontalConnections, topConnection, bottomConnection);
 	}
 
 	public void initialize(@Nullable Level world, BlockPos pos) {
 		this.world = world;
 		this.pos = pos;
 
-		if (this.connections != null) {
+		if(connections != null)
 			connections.detach();
-		}
 
 		if (world == null) {
 			this.connections = null;
