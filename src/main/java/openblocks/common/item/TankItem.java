@@ -20,6 +20,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import openblocks.Config;
@@ -229,12 +230,12 @@ public class TankItem extends BlockItem implements ICreativeVariantsItem {
 
 	public static FluidTank readTank(ItemStack stack) {
 		FluidTank tank = new FluidTank(TankBlockEntity.getTankCapacity());
-        tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
+        tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.EMPTY).copy());
         return tank;
 	}
 
 	private static void saveTank(@Nonnull ItemStack container, FluidTank tank) {
-		container.set(OpenBlocks.FLUID_COMPONENT, tank.getFluid());
+		container.set(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.copyOf(tank.getFluid()));
 	}
 
 	@Override

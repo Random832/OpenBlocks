@@ -171,7 +171,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	@Override
 	public void onBlockPlacedBy(BlockState state, LivingEntity placer, ItemStack stack) {
-		this.tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
+		this.tank.setFluid(stack.getOrDefault(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.EMPTY).copy());
 	}
 
 
@@ -398,7 +398,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 		ItemStack stack = new ItemStack(OpenBlocks.TANK_BLOCK);
 
 		if (tank.getFluidAmount() > 0)
-			stack.set(OpenBlocks.FLUID_COMPONENT, tank.getFluid());
+			stack.set(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.copyOf(tank.getFluid()));
 
 		return List.of(stack);
 	}
@@ -419,12 +419,10 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	@Override
 	protected void loadAdditional(CompoundTag pTag, HolderLookup.Provider pRegistries) {
 		super.loadAdditional(pTag, pRegistries);
-		if (pTag.contains(TANK_TAG, CompoundTag.TAG_COMPOUND)) {
+		if (pTag.contains(TANK_TAG, CompoundTag.TAG_COMPOUND))
 			tank.readFromNBT(pRegistries, pTag.getCompound(TANK_TAG));
-		}
-		if (level != null && level.isClientSide) {
+		if (level != null && level.isClientSide)
 			renderLogic.updateFluid(tank.getFluid());
-		}
 	}
 
 	@Override
@@ -441,12 +439,14 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	}
 
 	void sync() {
-		if (level.isClientSide) return;
-		ChunkPos chunkPos = new ChunkPos(worldPosition);
-		Packet<ClientGamePacketListener> packet = getUpdatePacket();
-		for (ServerPlayer player : ((ServerLevel) level).getChunkSource().chunkMap.getPlayers(chunkPos, false)) {
-			player.connection.send(packet);
-		}
+		level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+		// TODO test and cleanup
+		//if (level.isClientSide) return;
+		//ChunkPos chunkPos = new ChunkPos(worldPosition);
+		//Packet<ClientGamePacketListener> packet = getUpdatePacket();
+		//for (ServerPlayer player : ((ServerLevel) level).getChunkSource().chunkMap.getPlayers(chunkPos, false)) {
+		//	player.connection.send(packet);
+		//}
 	}
 
 	public void initializeForBewlr() {

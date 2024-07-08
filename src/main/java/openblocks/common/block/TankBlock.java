@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
@@ -63,7 +64,7 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 		if (tile != null) {
 			FluidTank tank = tile.getTank();
 			if (tank.getFluidAmount() > 0)
-				result.set(OpenBlocks.FLUID_COMPONENT, tank.getFluid());
+				result.set(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.copyOf(tank.getFluid()));
 		}
 		return result;
 	}
@@ -73,9 +74,10 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 		return true;
 	}
 
-	@Override
+    @Override
 	protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
 		TankBlockEntity tile = getBlockEntity(world, pos);
+		if(tile == null) return 0;
 		double value = tile.getFluidRatio() * 15;
 		if (value == 0) {
 			return 0;

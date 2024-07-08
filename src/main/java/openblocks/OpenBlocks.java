@@ -42,6 +42,7 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.*;
 import openblocks.common.GuideActionHandler;
@@ -133,8 +134,8 @@ public class OpenBlocks {
 			"active", b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
 	public static final DeferredHolder<DataComponentType<?>, DataComponentType<DyeColor>> IMAGINARY_COLOR = DATA_COMPONENTS.registerComponentType(
 			"crayon_color", b -> b.persistent(DyeColor.CODEC).networkSynchronized(DyeColor.STREAM_CODEC));
-	public static final Supplier<DataComponentType<FluidStack>> FLUID_COMPONENT = DATA_COMPONENTS.registerComponentType(
-			"fluid", b -> b.persistent(FluidStack.OPTIONAL_CODEC));
+	public static final Supplier<DataComponentType<SimpleFluidContent>> FLUID_COMPONENT = DATA_COMPONENTS.registerComponentType(
+			"fluid", b -> b.persistent(SimpleFluidContent.CODEC));
 	public static final Supplier<DataComponentType<ImaginaryPlacementMode>> IMAGINARY_MODE = DATA_COMPONENTS.registerComponentType(
 			"placement_mode", b -> b.persistent(ImaginaryPlacementMode.CODEC));
 	public static final Supplier<DataComponentType<GlobalPos>> TARGET_POS_COMPONENT = DATA_COMPONENTS.registerComponentType(
@@ -176,8 +177,8 @@ public class OpenBlocks {
 
 	static {
 		// we don't need fields for these
-		registerSimpleBlockItem(TANK_BLOCK, TankItem::new, new Item.Properties()
-				.component(FLUID_COMPONENT, FluidStack.EMPTY));
+		registerSimpleBlockItem(TANK_BLOCK, (b, p) -> new TankItem(b, p
+				.component(FLUID_COMPONENT, SimpleFluidContent.EMPTY)));
 		registerSimpleBlockItem(GUIDE_BLOCK, ItemGuide::new);
 		registerSimpleBlockItem(BUILDER_GUIDE_BLOCK, ItemGuide::new);
 		registerSimpleBlockItem(DRAIN_BLOCK);
@@ -192,7 +193,7 @@ public class OpenBlocks {
 		registerSimpleBlockItem(BIG_DARK_OAK_BUTTON);
 		registerSimpleBlockItem(BIG_MANGROVE_BUTTON);
 		registerSimpleBlockItem(BIG_BAMBOO_BUTTON);
-	}
+	} // block items
 
 	private static <T extends Block> void registerSimpleBlockItem(DeferredBlock<T> block, BiFunction<T, Item.Properties, Item> factory, Item.Properties properties) {
 		ITEMS.register(block.getId().getPath(), () -> factory.apply(block.get(), properties));
@@ -342,12 +343,8 @@ public class OpenBlocks {
 
 	@SubscribeEvent
 	public static void registerCapabilities(RegisterCapabilitiesEvent event) {
-		event.registerBlock(Capabilities.FluidHandler.BLOCK, (level, pos, state, blockEntity, context) ->
-						blockEntity instanceof TankBlockEntity tankBlockEntity ? tankBlockEntity.new ColumnFluidHandler() : null,
-				TANK_BLOCK.get());
-		event.registerItem(Capabilities.FluidHandler.ITEM, (stack, unused) ->
-						new TankItem.FluidHandler(stack),
-				TANK_BLOCK.asItem());
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, TANK_BE.get(), (be, side) -> be.new ColumnFluidHandler());
+		event.registerItem(Capabilities.FluidHandler.ITEM, (stack, unused) -> new TankItem.FluidHandler(stack), TANK_BLOCK.asItem());
 	}
 
 	@SubscribeEvent

@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.RenderTypeHelper;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
 import openblocks.common.item.TankItem;
@@ -42,7 +43,7 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
             TANK.initializeForBewlr();
         }
         TANK.setLevel(Minecraft.getInstance().level);
-        TANK.getTank().setFluid(pStack.getOrDefault(OpenBlocks.FLUID_COMPONENT, FluidStack.EMPTY));
+        TANK.getTank().setFluid(pStack.getOrDefault(OpenBlocks.FLUID_COMPONENT, SimpleFluidContent.EMPTY).copy());
 
         // this isn't available at init for some reason
         BlockModelShaper blockModelShaper = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper();
