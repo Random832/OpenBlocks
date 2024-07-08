@@ -67,8 +67,8 @@ public class TankRenderer implements BlockEntityRenderer<TankBlockEntity> {
 		final float vHeight = vMax - vMin;
 
         // dirty way to avoid z-fighting
-		final float EPSILON = 0; // 0.03125f;
 
+		final float EPSILON = 0.00625f; // 0.03125f;
 
 		if (data.shouldRenderFluidWall(Direction.NORTH) && (nw > 0 || ne > 0)) {
 			addVertex(wr, matrix, 1f, 0f, EPSILON, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.NORTH);

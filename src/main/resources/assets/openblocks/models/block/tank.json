@@ -1,20 +1,6 @@
 {
-    "loader": "openblocks:variant",
-    "base": {
-        "parent": "openblocks:block/tank_base"
-    },
-    "variants": {
-        "nw" : { "parent": "openblocks:block/tank_frame_y", "transform" : { "translation": [0, 0, 0] } },
-        "ne" : { "parent": "openblocks:block/tank_frame_y", "transform" : { "translation": [1, 0, 0] } },
-        "se" : { "parent": "openblocks:block/tank_frame_y", "transform" : { "translation": [1, 0, 1] } },
-        "sw" : { "parent": "openblocks:block/tank_frame_y", "transform" : { "translation": [0, 0, 1] } },
-        "tw" : { "parent": "openblocks:block/tank_frame_z", "transform" : { "translation": [0, 1, 0] } },
-        "te" : { "parent": "openblocks:block/tank_frame_z", "transform" : { "translation": [1, 1, 0] } },
-        "be" : { "parent": "openblocks:block/tank_frame_z", "transform" : { "translation": [1, 0, 0] } },
-        "bw" : { "parent": "openblocks:block/tank_frame_z", "transform" : { "translation": [0, 0, 0] } },
-        "tn" : { "parent": "openblocks:block/tank_frame_x", "transform" : { "translation": [0, 1, 0] } },
-        "ts" : { "parent": "openblocks:block/tank_frame_x", "transform" : { "translation": [0, 1, 1] } },
-        "bs" : { "parent": "openblocks:block/tank_frame_x", "transform" : { "translation": [0, 0, 1] } },
-        "bn" : { "parent": "openblocks:block/tank_frame_x", "transform" : { "translation": [0, 0, 0] } }
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "openblocks:block/tank"
     }
 }

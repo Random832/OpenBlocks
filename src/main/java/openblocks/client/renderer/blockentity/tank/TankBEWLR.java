@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -34,6 +35,8 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
     }
 
+    Direction[] DIRECTIONS = new Direction[] { Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null };
+
     @Override
     public void renderByItem(ItemStack pStack, ItemDisplayContext pDisplayContext, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
         if(tankRenderer == null) return;
@@ -49,14 +52,20 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
         BlockModelShaper blockModelShaper = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper();
         BakedModel model = blockModelShaper.getBlockModel(state);
 
-        // yeah this is a dirty way to do it, if the model ever changes it'll need to be fixed
-        RandomSource rand = RandomSource.create(42);
         if(pDisplayContext == ItemDisplayContext.GUI)
             // i don't know why the model doesn't do it
             Lighting.setupFor3DItems();
-        VertexConsumer buf = pBuffer.getBuffer(RenderTypeHelper.getEntityRenderType(RenderType.SOLID, false));
-        for (BakedQuad quad : model.getQuads(state, null, rand, modelData, RenderType.SOLID))
-            buf.putBulkData(pPoseStack.last(), quad, 1, 1, 1, 1, pPackedLight, pPackedOverlay, false);
+
+        RandomSource rand = RandomSource.create(42);
+        for (RenderType renderType : model.getRenderTypes(state, rand, modelData)) {
+            VertexConsumer buf = pBuffer.getBuffer(RenderTypeHelper.getEntityRenderType(renderType, false));
+            for (Direction direction : DIRECTIONS) {
+                rand.setSeed(42);
+                for (BakedQuad quad : model.getQuads(state, direction, rand, modelData, renderType))
+                    buf.putBulkData(pPoseStack.last(), quad, 1, 1, 1, 1, pPackedLight, pPackedOverlay, false);
+            }
+        }
+
         tankRenderer.render(TANK, 1, pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
     }
 }

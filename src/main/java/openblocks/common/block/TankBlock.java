@@ -121,4 +121,9 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 	protected @Nullable BlockEntityTicker<TankBlockEntity> makeTicker(Level level, BlockState state) {
 		return TankBlockEntity::tickerTick;
 	}
+
+	@Override
+	protected boolean skipRendering(BlockState pState, BlockState pAdjacentState, Direction pDirection) {
+		return pAdjacentState.is(this);
+	}
 }

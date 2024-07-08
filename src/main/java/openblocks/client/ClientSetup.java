@@ -1,26 +1,29 @@
 package openblocks.client;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.core.GlobalPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.packs.PackLocationInfo;
+import net.minecraft.server.packs.PackSelectionConfig;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.PathPackResources;
+import net.minecraft.server.packs.repository.KnownPack;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
-import openblocks.Config;
 import openblocks.OpenBlocks;
 import openblocks.client.renderer.blockentity.GuideRenderer;
 import openblocks.client.renderer.blockentity.ImaginaryBlockRenderer;
@@ -31,8 +34,8 @@ import openblocks.common.item.TankItem;
 import openblocks.lib.model.textureditem.TexturedItemModelLoader;
 import openblocks.lib.model.variant.VariantModelLoader;
 import openblocks.client.renderer.blockentity.tank.TankRenderer;
-import openblocks.lib.utils.EnchantmentUtils;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 @EventBusSubscriber(value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD, modid = OpenBlocks.MODID)
 public class ClientSetup {
@@ -110,4 +113,21 @@ public class ClientSetup {
 		event.registerReloadListener(ClientProxy.hitboxManager);
 	}
 
+	@SubscribeEvent
+	public static void addPackFinders(AddPackFindersEvent event) {
+		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
+			var resourcePath = ModList.get().getModFileById(OpenBlocks.MODID).getFile().findResource("classic_tank");
+			var supplier = new PathPackResources.PathResourcesSupplier(resourcePath);
+
+            event.addRepositorySource(packConsumer -> {
+				final PackLocationInfo packInfo = new PackLocationInfo(
+						"builtin/classic_tank",
+						Component.literal("Classic Tank Model"),
+						PackSource.BUILT_IN,
+						Optional.of(new KnownPack(OpenBlocks.MODID, "builtin/classic_tank", "1.0")));
+				final PackSelectionConfig selectionConfig = new PackSelectionConfig(false, Pack.Position.TOP, false);
+				packConsumer.accept(Pack.readMetaAndCreate(packInfo, supplier, PackType.CLIENT_RESOURCES, selectionConfig));
+			});
+		}
+	}
 }
