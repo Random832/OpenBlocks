@@ -52,6 +52,7 @@ public class OpenBlocksTagProviders {
             tag(ModTags.SPONGE_EFFECTIVE).addTag(Tags.Fluids.WATER).addTag(Tags.Fluids.LAVA);
             tag(ModTags.SPONGE_BURNS).addTag(Tags.Fluids.LAVA);
             tag(ModTags.LAVA_SPONGE_EFFECTIVE).addTag(Tags.Fluids.WATER).addTag(Tags.Fluids.LAVA);
+            tag(ModTags.EXPERIENCE).add(OpenBlocks.XP_JUICE_STILL.value(), OpenBlocks.XP_JUICE_FLOWING.value());
         }
     }
 }
