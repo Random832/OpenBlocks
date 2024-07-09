@@ -39,6 +39,8 @@ public class OpenBlocksBlockLoot extends BlockLootSubProvider {
 		dropSelf(OpenBlocks.BIG_DARK_OAK_BUTTON.get());
 		dropSelf(OpenBlocks.BIG_MANGROVE_BUTTON.get());
 		dropSelf(OpenBlocks.BIG_BAMBOO_BUTTON.get());
+		dropSelf(OpenBlocks.SPONGE.get());
+		dropSelf(OpenBlocks.LAVA_SPONGE.get());
 	}
 
 	@Override

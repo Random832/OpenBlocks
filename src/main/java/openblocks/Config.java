@@ -23,13 +23,12 @@ public class Config {
 	// TODO Not configurable yet [need to also figure out why fading doesn't work for pencil blocks]
 	public static float imaginaryFadingSpeed = 0.0075f;
 
-	// old default was actually 8 because it's squared distance, but I like having more distance now that my menu opening feature works
-	public static double cursorDistanceLimit = 64;
-	public static int cursorDurabilityBar = 100;
-	public static double cursorCostPerMeter = 1;
-	public static boolean enableCursorMenus = true;
-
 	private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+	//region tanks
+	static {
+		BUILDER.push("tanks");
+	}
 
 	private static final ModConfigSpec.IntValue BUCKETS_PER_TANK = BUILDER
 			.comment("The amount of buckets each tank can hold")
@@ -47,11 +46,27 @@ public class Config {
 			.comment("fluidDifferenceUpdateThreshold")
 			.defineInRange("fluidDifferenceUpdateThreshold", 0, 0, Integer.MAX_VALUE);
 
+	static {
+		BUILDER.pop();
+	}
+	// endregion
+
 	// a list of strings that are treated as resource locations for items
 	private static final ModConfigSpec.ConfigValue<List<? extends String>> XP_FLUIDS = BUILDER
 			.comment("Fluids on this list will be used as XP fluids before the ones in the tag.",
 					"Using the tag at 20 mb per xp is hardcoded afterwards")
 			.defineListAllowEmpty("xpFluids", List.of("openblocks:xp_juice:20", "#c:experience:20"), Config::validateXpFluidConversion);
+
+	//region cursor
+	static {
+		BUILDER.push("cursor");
+	}
+
+	// old default was actually 8 because it's squared distance, but I like having more distance now that my menu opening feature works
+	public static double cursorDistanceLimit = 64;
+	public static int cursorDurabilityBar = 100;
+	public static double cursorCostPerMeter = 1;
+	public static boolean enableCursorMenus = true;
 
 	private static final ModConfigSpec.DoubleValue CURSOR_MAX_DISTANCE = BUILDER
 			.comment("Maximum distance cursor can reach")
@@ -72,7 +87,66 @@ public class Config {
 					"May cause crashes, please provide feedback.")
 			.define("cursorMenusExperimental", true);
 
+	static {
+		BUILDER.pop();
+	}
+	//endregion
+
+	//region sponge
+	static {
+		BUILDER.push("sponge");
+	}
+
+	public static boolean vanillaSpongeHack = true;
+	public static boolean spongeBlockUpdate = false;
+	public static boolean spongeStickBlockUpdate = false;
+	public static int spongeRange = 3;
+	public static int spongeStickRange = 3;
+	public static boolean spongeWorksOnEverything = true;
+	public static boolean spongeBurnsInAllHotFluids = true;
+	public static int spongeStickMaxDamage = 256;
+
+	private static final ModConfigSpec.IntValue SPONGE_MAX_DAMAGE = BUILDER
+			.comment("SpongeOnAStick use count")
+			.defineInRange("spongeStickUseCount", 256, 1, 65535);
+
+	private static final ModConfigSpec.IntValue SPONGE_RANGE = BUILDER
+			.comment("Sponge block range (distance from center)")
+			.defineInRange("spongeRange", 3, 1, 16);
+
+	private static final ModConfigSpec.IntValue SPONGE_STICK_RANGE = BUILDER
+			.comment("Sponge-on-a-stick range (distance from center)")
+			.defineInRange("stickRange", 3, 1, 16);
+
+	private static final ModConfigSpec.BooleanValue SPONGE_WORKS_ON_EVERYTHING = BUILDER
+			.comment("Sponges work on all fluids. If disabled, it will use a tag instead, containing water and lava by default.")
+			.define("allFluids", false);
+
+	private static final ModConfigSpec.BooleanValue SPONGE_BURNS_IN_HOT_FLUIDS = BUILDER
+			.comment("Sponge burns up when absorbing any hot fluid (temperature > 800 K).")
+			.comment("If disabled, it will use a tag, containing Lava by default.")
+			.comment("Fluids in the tag burn the sponge whether or not they are hot.")
+			.define("allHotFluidsBurn", false);
+
+	private static final ModConfigSpec.BooleanValue SPONGE_BLOCK_UPDATE = BUILDER
+			.comment("Should sponge block update neighbours after liquid removal?")
+			.define("blockUpdate", false);
+
+	private static final ModConfigSpec.BooleanValue SPONGE_STICK_BLOCK_UPDATE = BUILDER
+			.comment("Should sponge-on-a-stick update neighbours after liquid removal?")
+			.define("stickBlockUpdate", false);
+
+	private static final ModConfigSpec.BooleanValue VANILLA_SPONGE_TICK_HACK = BUILDER
+			.comment("Should vanilla sponge suppress fluid ticks after liquid removal?")
+			.define("vanillaHack", true);
+
+	static {
+		BUILDER.pop();
+	}
+	// endregion
+
 	static final ModConfigSpec SPEC = BUILDER.build();
+
 
 	private static boolean validateXpFluidConversion(final Object obj) {
 		if (!(obj instanceof String s)) return false;
@@ -95,10 +169,21 @@ public class Config {
 		shouldTanksUpdate = SHOULD_TANKS_UPDATE.getAsBoolean();
 		displayAllFilledTanks = DISPLAY_ALL_FLUIDS.getAsBoolean();
 		tankFluidUpdateThreshold = UPDATE_THRESHOLD.getAsInt();
+
 		cursorDistanceLimit = CURSOR_MAX_DISTANCE.getAsDouble();
 		cursorCostPerMeter = CURSOR_XP_COST.getAsDouble();
 		cursorDurabilityBar = CURSOR_BAR.getAsInt();
 		enableCursorMenus = CURSOR_MENU_EXPERIMENTAL.getAsBoolean();
+
+		spongeRange = SPONGE_RANGE.getAsInt();
+		spongeRange = SPONGE_STICK_RANGE.getAsInt();
+		spongeBlockUpdate = SPONGE_BLOCK_UPDATE.getAsBoolean();
+		spongeStickBlockUpdate = SPONGE_STICK_BLOCK_UPDATE.getAsBoolean();
+		spongeBurnsInAllHotFluids = SPONGE_BURNS_IN_HOT_FLUIDS.getAsBoolean();
+		spongeWorksOnEverything = SPONGE_WORKS_ON_EVERYTHING.getAsBoolean();
+		spongeStickMaxDamage = SPONGE_MAX_DAMAGE.getAsInt();
+		vanillaSpongeHack = VANILLA_SPONGE_TICK_HACK.getAsBoolean();
+
 		FluidXpUtils.initializeFromConfig(XP_FLUIDS.get());
 	}
 }

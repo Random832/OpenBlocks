@@ -34,6 +34,10 @@ public class OpenBlocksLangEnUs extends OpenBlocksLangProviderBase {
         addWithDescription(OpenBlocks.DRAIN_BLOCK, "XP Drain", "Place the XP drain above an OpenBlocks tank and stand on it. Your XP will drain into the tank, which can then be used for blocks such as the auto enchantment table or the auto anvil.");
         addWithDescription(OpenBlocks.WRENCH, "Big Metal Bar", "This is extremely sophisticated tool used to perform transformations of objects with octahedral symmetry.\n\n\nOr just big, dumb piece of metal you can use to rotate cubes and stuff.\n\nSo yeah, it's yet another wrench. I'm just trying to be original here, ok?");
         addWithDescription(OpenBlocks.CURSOR, "Cursor", "The cursor will let you click on blocks remotely.\nSimply shift-click onto a block to link the cursor, then use the cursor wherever you like to click on the target block. Be warned, by default the cursor uses up your XP relative to how far you are from the block you're clicking.");
+        addWithDescription(OpenBlocks.SPONGE, "Sponge", "The sponge is a replacement for the vanilla sponge. Perfect for removing small pockets of lava or water. Be careful when using it on large areas of liquid though as it'll start to get quite messy.");
+        addWithDescription(OpenBlocks.SPONGE_STICK, "Sponge", "The sponge on a stick is a tool for cleaning up liquids. Works just like the sponge, but is more mobile at the expense of wearing out.");
+        add(OpenBlocks.LAVA_SPONGE.get(), "Lava Sponge");
+        add(OpenBlocks.LAVA_SPONGE_STICK.get(), "Lava Sponge");
         add(OpenBlocks.XP_BUCKET.get(), "XP Bucket");
         add(OpenBlocks.TASTY_CLAY.get(), "Tasty Clay");
         add(OpenBlocks.CRAYON.get(), "Magic Crayon");

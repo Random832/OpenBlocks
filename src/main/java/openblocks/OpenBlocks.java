@@ -40,7 +40,6 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -109,6 +108,9 @@ public class OpenBlocks {
 	public static final DeferredBlock<LiquidBlock> XP_JUICE_BLOCK = BLOCKS.register("xp_juice", () ->
 			new LiquidBlock((FlowingFluid) OpenBlocks.XP_JUICE_STILL.value(), BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.COLOR_LIGHT_GREEN)));
 
+	public static final DeferredBlock<SpongeBlock> SPONGE = BLOCKS.registerBlock("sponge", SpongeBlock::makeWaterSponge, Block.Properties.ofFullCopy(Blocks.SPONGE));
+	public static final DeferredBlock<SpongeBlock> LAVA_SPONGE = BLOCKS.registerBlock("lava_sponge", SpongeBlock::makeLavaSponge, Block.Properties.ofFullCopy(Blocks.SPONGE));
+
 	private static DeferredBlock<BigButtonBlock> woodBigButton(BlockSetType type) {
 		return BLOCKS.registerBlock(type.name() + "_big_button", p -> new BigButtonBlock(type, 30, p), Block.Properties.ofFullCopy(Blocks.OAK_BUTTON));
 	}
@@ -174,6 +176,11 @@ public class OpenBlocks {
 			p -> new ImaginaryDrawItem(p, CRAYON_BLOCK, CRAYON_PANEL, CRAYON_STAIRS),
 			new Item.Properties().durability(40));
 
+	public static final DeferredItem<SpongeStickItem> SPONGE_STICK = ITEMS.registerItem("sponge_stick", SpongeStickItem::makeWaterSponge, new Item.Properties()
+			.durability(Config.spongeStickMaxDamage));
+	public static final DeferredItem<SpongeStickItem> LAVA_SPONGE_STICK = ITEMS.registerItem("lava_sponge_stick", SpongeStickItem::makeLavaSponge, new Item.Properties()
+			.durability(Config.spongeStickMaxDamage)
+			.fireResistant());
 
 	static {
 		// we don't need fields for these
@@ -193,6 +200,8 @@ public class OpenBlocks {
 		registerSimpleBlockItem(BIG_DARK_OAK_BUTTON);
 		registerSimpleBlockItem(BIG_MANGROVE_BUTTON);
 		registerSimpleBlockItem(BIG_BAMBOO_BUTTON);
+		registerSimpleBlockItem(SPONGE);
+		registerSimpleBlockItem(LAVA_SPONGE, BlockItem::new, new Item.Properties().fireResistant());
 	} // block items
 
 	private static <T extends Block> void registerSimpleBlockItem(DeferredBlock<T> block, BiFunction<T, Item.Properties, Item> factory, Item.Properties properties) {
@@ -334,8 +343,9 @@ public class OpenBlocks {
 
 		generator.addProvider(event.includeServer(), new OpenBlocksRecipes(packOutput, registries));
 		generator.addProvider(event.includeServer(), new LootTableProvider(packOutput, Set.of(), List.of(new LootTableProvider.SubProviderEntry(OpenBlocksBlockLoot::new, LootContextParamSets.BLOCK)), registries));
-		generator.addProvider(event.includeServer(), blockTagProvider = new OpenBlocksTagProviders.BlockTags(packOutput, registries, OpenBlocks.MODID, event.getExistingFileHelper()));
-		generator.addProvider(event.includeServer(), new OpenBlocksTagProviders.ItemTags(packOutput, registries, blockTagProvider.contentsGetter(), OpenBlocks.MODID, event.getExistingFileHelper()));
+		generator.addProvider(event.includeServer(), blockTagProvider = new OpenBlocksTagProviders.BlockTags(packOutput, registries, event.getExistingFileHelper()));
+		generator.addProvider(event.includeServer(), new OpenBlocksTagProviders.ItemTags(packOutput, registries, blockTagProvider.contentsGetter(), event.getExistingFileHelper()));
+		generator.addProvider(event.includeServer(), new OpenBlocksTagProviders.FluidTags(packOutput, registries, event.getExistingFileHelper()));
 		generator.addProvider(event.includeClient(), new OpenBlocksBlockStates(packOutput, event.getExistingFileHelper()));
 		generator.addProvider(event.includeClient(), new OpenBlocksItemModels(packOutput, event.getExistingFileHelper()));
 		generator.addProvider(event.includeClient(), new OpenBlocksLangEnUs(packOutput));

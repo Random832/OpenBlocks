@@ -34,7 +34,8 @@ public class OpenBlocksItemModels extends ItemModelProvider {
         generated(OpenBlocks.TASTY_CLAY, GENERATED, modLoc("item/yum_yum"));
         generated(OpenBlocks.WRENCH, HANDHELD);
         generated(OpenBlocks.CURSOR);
-
+        generated(OpenBlocks.SPONGE_STICK, HANDHELD, modLoc("item/sponge_on_a_stick"));
+        generated(OpenBlocks.LAVA_SPONGE_STICK, HANDHELD, modLoc("item/lava_sponge_on_a_stick"));
     }
 
     private String key(DeferredItem<?> holder) {

@@ -13,6 +13,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import openblocks.OpenBlocks;
 import openblocks.common.block.BigButtonBlock;
 import openblocks.lib.block.LegacyBlockRotationMode;
+import openblocks.lib.block.OpenBlock;
 import openblocks.lib.geometry.Orientation;
 
 import java.util.HashMap;
@@ -55,6 +56,8 @@ public class OpenBlocksBlockStates extends BlockStateProvider {
 		makeBigButton(OpenBlocks.BIG_DARK_OAK_BUTTON, "dark_oak_planks");
 		makeBigButton(OpenBlocks.BIG_MANGROVE_BUTTON, "mangrove_planks");
 		makeBigButton(OpenBlocks.BIG_BAMBOO_BUTTON, "bamboo_planks");
+		simpleBlockWithItem(OpenBlocks.SPONGE.get(), cubeAll(OpenBlocks.SPONGE.get()));
+		simpleBlockWithItem(OpenBlocks.LAVA_SPONGE.get(), cubeAll(OpenBlocks.LAVA_SPONGE.get()));
 	}
 
 	private void simpleBlockItem(DeferredBlock<?> block) {

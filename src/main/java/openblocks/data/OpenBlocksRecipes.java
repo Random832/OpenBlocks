@@ -56,12 +56,7 @@ public class OpenBlocksRecipes extends RecipeProvider {
 		}
 		for (DeferredHolder<Item, ? extends Item> entry : OpenBlocks.ITEMS.getEntries()) {
 			if(!(uncraftableItems.contains(entry.value()) || craftableItems.contains(entry.value())))
-				Log.warn("No recipe found for" + entry.getKey());
-		}
-		for (DeferredHolder<Block, ? extends Block> entry : OpenBlocks.BLOCKS.getEntries()) {
-			Item item = entry.get().asItem();
-			if(item != Items.AIR && !(uncraftableItems.contains(item) || craftableItems.contains(item)))
-				Log.warn("No recipe found for" + entry.getKey());
+				Log.warn("No recipe found for " + entry.getKey().location());
 		}
 		return value;
 	}
@@ -156,6 +151,24 @@ public class OpenBlocksRecipes extends RecipeProvider {
 				.unlockedBy("has_wool", has(ItemTags.WOOL))
 				.save(consumer);
 
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, OpenBlocks.SPONGE_STICK)
+				.pattern("s")
+				.pattern("/")
+				.pattern("/")
+				.define('s', OpenBlocks.SPONGE)
+				.define('/', Tags.Items.RODS_WOODEN)
+				.unlockedBy("has_sponge", has(OpenBlocks.SPONGE))
+				.save(consumer);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, OpenBlocks.LAVA_SPONGE_STICK)
+				.pattern("s")
+				.pattern("/")
+				.pattern("/")
+				.define('s', OpenBlocks.LAVA_SPONGE)
+				.define('/', Tags.Items.RODS_BLAZE)
+				.unlockedBy("has_sponge", has(OpenBlocks.LAVA_SPONGE))
+				.save(consumer);
+
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, OpenBlocks.LADDER)
 				.requires(Blocks.LADDER)
 				.requires(ItemTags.WOODEN_TRAPDOORS)
@@ -182,6 +195,18 @@ public class OpenBlocksRecipes extends RecipeProvider {
 				.requires(OpenBlocks.PENCIL)
 				.requires(Items.PAPER)
 				.unlockedBy(getHasName(OpenBlocks.PENCIL), has(OpenBlocks.PENCIL))
+				.save(consumer);
+
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, OpenBlocks.SPONGE)
+				.requires(ItemTags.WOOL)
+				.requires(Tags.Items.SLIMEBALLS)
+				.unlockedBy("has_wool", has(ItemTags.WOOL))
+				.save(consumer);
+
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, OpenBlocks.LAVA_SPONGE)
+				.requires(OpenBlocks.SPONGE)
+				.requires(Tags.Items.INGOTS_NETHERITE)
+				.unlockedBy("has_netherite", has(Tags.Items.INGOTS_NETHERITE))
 				.save(consumer);
 
 		bigButton(consumer, OpenBlocks.BIG_STONE_BUTTON , Blocks.STONE_BUTTON );
