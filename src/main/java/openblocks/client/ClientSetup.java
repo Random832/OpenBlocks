@@ -59,7 +59,7 @@ public class ClientSetup {
 
 	@SubscribeEvent
 	public static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-		event.registerBlockEntityRenderer(OpenBlocks.TANK_BE.get(), c -> TankBEWLR.tankRenderer = new TankRenderer(c));
+		event.registerBlockEntityRenderer(OpenBlocks.TANK_BE.get(), TankRenderer::new);
 		event.registerBlockEntityRenderer(OpenBlocks.GUIDE_BE.get(), c -> new GuideRenderer<>(c, ClientProxy.guideModelHolder));
 		event.registerBlockEntityRenderer(OpenBlocks.IMAGINARY_BE.get(), ImaginaryBlockRenderer::new);
 	}

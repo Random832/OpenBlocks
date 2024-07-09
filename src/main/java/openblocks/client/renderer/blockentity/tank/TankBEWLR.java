@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,17 +19,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.RenderTypeHelper;
 import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
-import openblocks.common.item.TankItem;
 
 import javax.annotation.Nullable;
 
 public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
     private @Nullable TankBlockEntity TANK = null;
-    public static @Nullable TankRenderer tankRenderer;
     ModelData modelData = NeighbourMap.getDataForBEWLR();
 
     public TankBEWLR() {
@@ -39,7 +37,6 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
 
     @Override
     public void renderByItem(ItemStack pStack, ItemDisplayContext pDisplayContext, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
-        if(tankRenderer == null) return;
         BlockState state = OpenBlocks.TANK_BLOCK.get().defaultBlockState();
         if (TANK == null) {
             TANK = new TankBlockEntity(BlockPos.ZERO, state);
@@ -66,6 +63,6 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
             }
         }
 
-        tankRenderer.render(TANK, 1, pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
+        Minecraft.getInstance().getBlockEntityRenderDispatcher().renderItem(TANK, pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
     }
 }
