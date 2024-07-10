@@ -36,6 +36,7 @@ public class OpenBlocksItemModels extends ItemModelProvider {
         generated(OpenBlocks.CURSOR);
         generated(OpenBlocks.SPONGE_STICK, HANDHELD, modLoc("item/sponge_on_a_stick"));
         generated(OpenBlocks.LAVA_SPONGE_STICK, HANDHELD, modLoc("item/lava_sponge_on_a_stick"));
+        generated(OpenBlocks.DEBUG_PROBE, HANDHELD);
     }
 
     private String key(DeferredItem<?> holder) {

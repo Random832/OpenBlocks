@@ -182,6 +182,8 @@ public class OpenBlocks {
 			.durability(Config.spongeStickMaxDamage)
 			.fireResistant());
 
+	public static final DeferredItem<DebugProbeItem> DEBUG_PROBE = ITEMS.registerItem("debug_probe", DebugProbeItem::new, new Item.Properties());
+
 	static {
 		// we don't need fields for these
 		registerSimpleBlockItem(TANK_BLOCK, (b, p) -> new TankItem(b, p
