@@ -31,7 +31,17 @@ public class DiagonalConnection extends RenderConnection {
 			sum += stack.getAmount();
 		}
 
-		public void update(float[] height) {
+		public void update(float[] height, Map<Diagonal, FluidStack> fluids) {
+			if(diagonals.size() == 2) {
+				Diagonal[] tmp = diagonals.toArray(new Diagonal[2]);
+				if(tmp[0] == tmp[1].getOpposite()) {
+					// illegal diagonal-only connection
+					height[tmp[0].ordinal()] = fluids.get(tmp[0]).getAmount() / (float)TankBlockEntity.getTankCapacity();
+					height[tmp[1].ordinal()] = fluids.get(tmp[1]).getAmount() / (float)TankBlockEntity.getTankCapacity();
+					return;
+				}
+			}
+
 			final float average = TankRenderUtils.clampLevel((sum / diagonals.size()) / TankBlockEntity.getTankCapacity());
 
 			for (Diagonal d : diagonals) {
@@ -86,22 +96,20 @@ public class DiagonalConnection extends RenderConnection {
 
 		List<DiagonalConnection.Group> groups = Lists.newArrayList();
 		for (Diagonal diagonal : Diagonal.VALUES) {
-			if (!fluids.containsKey(diagonal)) {
+			if (!fluids.containsKey(diagonal))
 				continue;
-			}
 
 			FluidStack stack = fluids.get(diagonal);
 
-			if (stack == null || stack.getAmount() <= 0) {
-				return;
-			}
+			if (stack.isEmpty())
+				continue;
 
 			DiagonalConnection.Group e = findGroup(groups, stack);
 			e.addDiagonal(diagonal, stack);
 		}
 
 		for (DiagonalConnection.Group group : groups) {
-			group.update(height);
+			group.update(height, fluids);
 		}
 	}
 

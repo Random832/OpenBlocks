@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -16,6 +17,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import openblocks.common.blockentity.TankBlockEntity;
 import openblocks.lib.geometry.Diagonal;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class TankRenderer implements BlockEntityRenderer<TankBlockEntity> {
 	public TankRenderer(BlockEntityRendererProvider.Context c) {
@@ -29,26 +31,24 @@ public class TankRenderer implements BlockEntityRenderer<TankBlockEntity> {
 			final Level world = tankTile.getLevel();
 			final float time = world.getGameTime() + partialTicks;
 			VertexConsumer output = buffer.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
-			renderFluid(output, matrixStack.last().pose(), data, time, combinedLightIn, combinedOverlayIn);
+			renderFluid(matrixStack, output, data, time, combinedLightIn, combinedOverlayIn);
 		}
 	}
 
-	private static void addVertex(VertexConsumer wr, Matrix4f matrix, float x, float y, float z, float u, float v, int r, int g, int b, int a, int lightmap, int overlay, Direction normal) {
+	private static void addVertex(VertexConsumer wr, Matrix4f matrix, float x, float y, float z, float u, float v, int r, int g, int b, int a, int lightmap, int overlay, Vector3f normal) {
 		wr.addVertex(matrix, x, y, z)
 				.setColor(r, g, b, a)
 				.setUv(u, v)
 				.setOverlay(overlay)
 				.setLight(lightmap)
-				.setNormal(normal.getStepX(), normal.getStepY(), normal.getStepZ());
+				.setNormal(normal.x, normal.y, normal.z);
 	}
 
-	private static void renderFluid(final VertexConsumer wr, final Matrix4f matrix, final ITankRenderFluidData data, float time, int combinedLights, int combinedOverlay) {
-		float se = data.getCornerFluidLevel(Diagonal.SE, time);
-		float ne = data.getCornerFluidLevel(Diagonal.NE, time);
-		float sw = data.getCornerFluidLevel(Diagonal.SW, time);
-		float nw = data.getCornerFluidLevel(Diagonal.NW, time);
+	private static void renderFluid(PoseStack poseStack, final VertexConsumer wr, final ITankRenderFluidData data, float time, int combinedLights, int combinedOverlay) {
+		final PoseStack.Pose pose = poseStack.last();
+		final Matrix4f matrix = pose.pose();
 
-		final float center = data.getCenterFluidLevel(time);
+		float cy = data.getCenterFluidLevel(time);
 
 		final FluidStack fluid = data.getFluid();
 		IClientFluidTypeExtensions attributes = IClientFluidTypeExtensions.of(fluid.getFluid());
@@ -66,65 +66,101 @@ public class TankRenderer implements BlockEntityRenderer<TankBlockEntity> {
 
 		final float vHeight = vMax - vMin;
 
-        // dirty way to avoid z-fighting
+		// set the fluid face back from the model space slightly to avoid z-fighting
+		// classic frame is 1/80 thick, so 1/160 in and out of the block space.
+		final float EPSILON = 1/256f;
 
-		final float EPSILON = 0.00625f; // 0.03125f;
-
-		if (data.shouldRenderFluidWall(Direction.NORTH) && (nw > 0 || ne > 0)) {
-			addVertex(wr, matrix, 1f, 0f, EPSILON, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.NORTH);
-			addVertex(wr, matrix, 0f, 0f, EPSILON, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.NORTH);
-			addVertex(wr, matrix, 0f, nw, EPSILON, uMin, vMin + (vHeight * nw), r, g, b, a, combinedLights, combinedOverlay, Direction.NORTH);
-			addVertex(wr, matrix, 1f, ne, EPSILON, uMax, vMin + (vHeight * ne), r, g, b, a, combinedLights, combinedOverlay, Direction.NORTH);
+		boolean doT = data.shouldRenderFluidWall(Direction.UP);
+		float nw, ne, se, sw;
+		if(doT) {
+			nw = data.getCornerFluidLevel(Diagonal.NW, time) * (1 - EPSILON);
+			ne = data.getCornerFluidLevel(Diagonal.NE, time) * (1 - EPSILON);
+			sw = data.getCornerFluidLevel(Diagonal.SW, time) * (1 - EPSILON);
+			se = data.getCornerFluidLevel(Diagonal.SE, time) * (1 - EPSILON);
+		} else {
+			nw = ne = se = sw = 1;
 		}
 
-		if (data.shouldRenderFluidWall(Direction.SOUTH) && (se > 0 || sw > 0)) {
-			addVertex(wr, matrix, 1f, 0f, 1-EPSILON, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.SOUTH);
-			addVertex(wr, matrix, 1f, se, 1-EPSILON, uMin, vMin + (vHeight * se), r, g, b, a, combinedLights, combinedOverlay, Direction.SOUTH);
-			addVertex(wr, matrix, 0f, sw, 1-EPSILON, uMax, vMin + (vHeight * sw), r, g, b, a, combinedLights, combinedOverlay, Direction.SOUTH);
-			addVertex(wr, matrix, 0f, 0f, 1-EPSILON, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.SOUTH);
+		boolean doB = data.shouldRenderFluidWall(Direction.DOWN);
+		float by = doB ? EPSILON : 0;
+
+		boolean doN = data.shouldRenderFluidWall(Direction.NORTH) && (nw > 0 || ne > 0);
+		boolean doS = data.shouldRenderFluidWall(Direction.SOUTH) && (se > 0 || sw > 0);
+		boolean doW = data.shouldRenderFluidWall(Direction.WEST) && (sw > 0 || nw > 0);
+		boolean doE = data.shouldRenderFluidWall(Direction.EAST) && (ne > 0 || se > 0);
+
+		float nz = doN ? EPSILON : 0;
+		float sz = doS ? 1 - EPSILON : 1;
+		float wx = doW ? EPSILON : 0;
+		float ex = doE ? 1 - EPSILON : 1;
+
+		Vector3f norm = new Vector3f();
+
+		if (doN) {
+			pose.transformNormal(0, 0, -1, norm);
+			addVertex(wr, matrix, wx, by, nz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, nw, nz, uMin, vMin + (vHeight * nw), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, ne, nz, uMax, vMin + (vHeight * ne), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, by, nz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
 		}
 
-		if (data.shouldRenderFluidWall(Direction.EAST) && (ne > 0 || se > 0)) {
-			addVertex(wr, matrix, 1-EPSILON, 0f, 0f, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.EAST);
-			addVertex(wr, matrix, 1-EPSILON, ne, 0f, uMin, vMin + (vHeight * ne), r, g, b, a, combinedLights, combinedOverlay, Direction.EAST);
-			addVertex(wr, matrix, 1-EPSILON, se, 1f, uMax, vMin + (vHeight * se), r, g, b, a, combinedLights, combinedOverlay, Direction.EAST);
-			addVertex(wr, matrix, 1-EPSILON, 0f, 1f, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.EAST);
+		if (doS) {
+			pose.transformNormal(0, 0, 1, norm);
+			addVertex(wr, matrix, ex, by, sz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, se, sz, uMin, vMin + (vHeight * se), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, sw, sz, uMax, vMin + (vHeight * sw), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, by, sz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
 		}
 
-		if (data.shouldRenderFluidWall(Direction.WEST) && (sw > 0 || nw > 0)) {
-			addVertex(wr, matrix, EPSILON, 0f, 1f, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.WEST);
-			addVertex(wr, matrix, EPSILON, sw, 1f, uMin, vMin + (vHeight * sw), r, g, b, a, combinedLights, combinedOverlay, Direction.WEST);
-			addVertex(wr, matrix, EPSILON, nw, 0f, uMax, vMin + (vHeight * nw), r, g, b, a, combinedLights, combinedOverlay, Direction.WEST);
-			addVertex(wr, matrix, EPSILON, 0f, 0f, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.WEST);
+		if (doW) {
+			pose.transformNormal(-1, 0, 0, norm);
+			addVertex(wr, matrix, wx, by, sz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, sw, sz, uMin, vMin + (vHeight * sw), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, nw, nz, uMax, vMin + (vHeight * nw), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, by, nz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
 		}
 
-		if (data.shouldRenderFluidWall(Direction.UP)) {
-			final float uMid = (uMax + uMin) / 2;
-			final float vMid = (vMax + vMin) / 2;
-
-			float se2 = Math.min(se, 1-EPSILON);
-			float sw2 = Math.min(sw, 1-EPSILON);
-			float ne2 = Math.min(ne, 1-EPSILON);
-			float nw2 = Math.min(nw, 1-EPSILON);
-			float cc2 = Math.min(nw, 1-EPSILON);
-
-			// Normals are approximate
-			addVertex(wr, matrix, 0.5f, cc2, 0.5f, uMid, vMid, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 1f, se2, 1f, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 1f, ne2, 0f, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 0f, nw2, 0f, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-
-			addVertex(wr, matrix, 0f, sw2, 1f, uMax, vMax, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 1f, se2, 1f, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 0.5f, cc2, 0.5f, uMid, vMid, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
-			addVertex(wr, matrix, 0f, nw2, 0f, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, Direction.UP);
+		if (doE) {
+			pose.transformNormal( 1, 0, 0, norm);
+			addVertex(wr, matrix, ex, by, nz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, ne, nz, uMin, vMin + (vHeight * ne), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, se, sz, uMax, vMin + (vHeight * se), r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, by, sz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
 		}
 
-		if (data.shouldRenderFluidWall(Direction.DOWN)) {
-			addVertex(wr, matrix, 1f, EPSILON, 0f, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.DOWN);
-			addVertex(wr, matrix, 1f, EPSILON, 1f, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, Direction.DOWN);
-			addVertex(wr, matrix, 0f, EPSILON, 1f, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, Direction.DOWN);
-			addVertex(wr, matrix, 0f, EPSILON, 0f, uMax, vMax, r, g, b, a, combinedLights, combinedOverlay, Direction.DOWN);
+		if (doB) {
+			pose.transformNormal(0, -1,0, norm);
+			addVertex(wr, matrix, ex, by, sz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, by, sz, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, wx, by, nz, uMax, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+			addVertex(wr, matrix, ex, by, nz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+		}
+
+		if (doT) {
+			pose.transformNormal(0, 1, 0,norm); // Normals are approximate
+			cy *= 1 - EPSILON;
+
+			if (Mth.abs(cy - (nw + ne + sw + se) / 4) < 0.25) {
+				// translucency sorting doesn't like the two quad version, so
+				// try to render as one quad unless it's going to be very misleading
+				addVertex(wr, matrix, wx, sw, sz, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, ex, se, sz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, ex, ne, nz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, wx, nw, nz, uMax, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+			} else {
+				final float uMid = (uMax + uMin) / 2;
+				final float vMid = (vMax + vMin) / 2;
+
+				addVertex(wr, matrix, 0.5f, cy, 0.5f, uMid, vMid, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, ex, se, sz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, ex, ne, nz, uMin, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, wx, nw, nz, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+
+				addVertex(wr, matrix, wx, sw, sz, uMax, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, ex, se, sz, uMax, vMin, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, 0.5f, cy, 0.5f, uMid, vMid, r, g, b, a, combinedLights, combinedOverlay, norm);
+				addVertex(wr, matrix, wx, ne, nz, uMin, vMax, r, g, b, a, combinedLights, combinedOverlay, norm);
+			}
 		}
 	}
 }
