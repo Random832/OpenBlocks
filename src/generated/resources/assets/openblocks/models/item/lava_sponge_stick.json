@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "openblocks:item/lava_sponge_on_a_stick"
+  }
+}

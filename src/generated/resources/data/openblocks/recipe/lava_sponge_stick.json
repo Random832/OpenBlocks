@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "/": {
+      "tag": "c:rods/blaze"
+    },
+    "s": {
+      "item": "openblocks:lava_sponge"
+    }
+  },
+  "pattern": [
+    "s",
+    "/",
+    "/"
+  ],
+  "result": {
+    "count": 1,
+    "id": "openblocks:lava_sponge_stick"
+  }
+}
