@@ -1,44 +1,7 @@
-# Runtime output
-*.class
-*.log
-*.pid
-*.log.gz
-
-# Package Files
-*.jar
-*.war
-*.ear
-
-# Gradle
+.cache/
+.github/
 .gradle/
-build/
-run/
-bin/
-/**/generated/
-
-# Eclipse
-.classpath
-.project
-.settings/
-*.launch
-
-# IntelliJ IDEA
-*.iml
-*.iws
-*.ipr
 .idea/
-/**/out/
-
-# OS Garbage
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Misc
-download/
-config/
-saves/
-crash-reports/
-screenshots/
-usernamecache.json
-options.txt
+.~lock.*
+build/
+runs/
