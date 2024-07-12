@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,6 +30,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.common.world.AuxiliaryLightManager;
 import net.neoforged.neoforge.fluids.*;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
@@ -47,6 +47,7 @@ import openblocks.lib.utils.FluidXpUtils;
 import openblocks.client.renderer.blockentity.tank.ITankRenderFluidData;
 import openblocks.client.renderer.blockentity.tank.NeighbourMap;
 import openblocks.client.renderer.blockentity.tank.TankRenderLogic;
+import org.jetbrains.annotations.Nullable;
 
 public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity, IPlaceAwareTile, INeighbourAwareTile, ICustomBreakDrops {
 
@@ -65,6 +66,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 			renderLogic.initialize(level, worldPosition);
 			renderLogic.updateFluid(tank.getFluid());
 		}
+		updateLight();
 	}
 
 	@Override
@@ -101,9 +103,15 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 
 	private int ticksSinceLastSignalUpdate = (hashCode() & 0x7fffffff) % UPDATE_THRESHOLD;
 
+	private int ticksSinceLastLightUpdate = (hashCode() & 0x7fffffff) % UPDATE_THRESHOLD;
+
 	private boolean hasPendingSignalUpdate;
 
 	private boolean needsNeighbourRecheck;
+
+	private boolean hasPendingLightUpdate = true;
+
+	int previousLightLevel = -1;
 
 	public TankBlockEntity(BlockPos pPos, BlockState pBlockState) {
 		super(OpenBlocks.TANK_BE.get(), pPos, pBlockState);
@@ -122,7 +130,25 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 		FluidStack stack = tank.getFluid();
 		Fluid fluid = stack.getFluid();
 		return fluid.getFluidType().getLightLevel();
+		//if(light < 2) return light;
+		//return Mth.ceil(light * Math.min(1, getFluidRatio()));
 	}
+
+	private boolean updateLight() {
+		ticksSinceLastLightUpdate = 0;
+		hasPendingLightUpdate = false;
+		if(!Config.tanksEmitLight) return false;
+		if(level == null) return false;
+		AuxiliaryLightManager manager = level.getAuxLightManager(worldPosition);
+		if(manager != null) {
+			int lightLevel = getFluidLightLevel();
+			if(lightLevel != previousLightLevel)
+				manager.setLightAt(worldPosition, lightLevel);
+			return lightLevel != previousLightLevel;
+		}
+		return false;
+	}
+
 
 	@Nullable
 	public ITankRenderFluidData getRenderFluidData() {
@@ -231,6 +257,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	public static void serverTick(Level level, BlockPos pos, BlockState state, TankBlockEntity be) {
 		be.ticksSinceLastSync++;
 		be.ticksSinceLastSignalUpdate++;
+		be.ticksSinceLastLightUpdate++;
 
 		if (Config.shouldTanksUpdate && be.hasPendingFluidTransfers) {
 			be.hasPendingFluidTransfers = false;
@@ -268,18 +295,30 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 			be.ticksSinceLastSignalUpdate = 0;
 			level.updateNeighbourForOutputSignal(pos, state.getBlock());
 		}
+
+		if(be.hasPendingLightUpdate && be.ticksSinceLastLightUpdate > UPDATE_THRESHOLD)
+			be.updateLight();
 	}
 
 	public static void clientTick(Level level, BlockPos pos, BlockState state, TankBlockEntity be) {
+		be.ticksSinceLastLightUpdate++;
 		//be.renderLogic.validateConnections(level, pos);
+
+		boolean doRedrawChunk = false;
 
 		if (be.needsNeighbourRecheck) {
 			be.needsNeighbourRecheck = false;
-			if (level.isClientSide) {
 				be.updateModelState();
-				level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
-			}
+				doRedrawChunk = true;
 		}
+
+		if(be.hasPendingLightUpdate && be.ticksSinceLastLightUpdate > UPDATE_THRESHOLD) {
+			if(be.updateLight())
+				doRedrawChunk = true;
+		}
+
+		if(doRedrawChunk)
+			level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
 	}
 
 	private boolean tryGetNeighbor(List<TankBlockEntity> result, FluidStack fluid, Direction side) {
@@ -341,11 +380,13 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 	private void tankChanged() {
 		updateSignal();
 		needsSync = true;
+		hasPendingLightUpdate = true;
 	}
 
 	private void markContentsUpdated() {
 		updateSignal();
 		hasPendingFluidTransfers = true;
+		hasPendingLightUpdate = true;
 	}
 
 	private void tryFillBottomTank(FluidStack fluid) {
@@ -432,6 +473,7 @@ public class TankBlockEntity extends OpenTileEntity implements UsableBlockEntity
 			tank.readFromNBT(pRegistries, pTag.getCompound(TANK_TAG));
 		if (level != null && level.isClientSide)
 			renderLogic.updateFluid(tank.getFluid());
+		hasPendingLightUpdate = true;
 	}
 
 	@Override

@@ -12,23 +12,22 @@ import java.util.List;
 @EventBusSubscriber(modid = OpenBlocks.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class Config {
 
-	// Tank stuff
-	public static int bucketsPerTank = 16;
-	public static boolean shouldTanksUpdate = true;
-	public static boolean displayAllFilledTanks = true;
-	public static int tankFluidUpdateThreshold = 0;
-
-	// XP fluid stuff [static info lives in FluidXpUtils]
 
 	// TODO Not configurable yet [need to also figure out why fading doesn't work for pencil blocks]
 	public static float imaginaryFadingSpeed = 0.0075f;
 
 	private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-	//region tanks
+    //region tanks
 	static {
 		BUILDER.push("tanks");
 	}
+
+	public static int bucketsPerTank = 16;
+	public static boolean shouldTanksUpdate = true;
+	public static boolean displayAllFilledTanks = true;
+	public static int tankFluidUpdateThreshold = 0;
+	public static boolean tanksEmitLight = true;
 
 	private static final ModConfigSpec.IntValue BUCKETS_PER_TANK = BUILDER
 			.comment("The amount of buckets each tank can hold")
@@ -46,16 +45,37 @@ public class Config {
 			.comment("fluidDifferenceUpdateThreshold")
 			.defineInRange("fluidDifferenceUpdateThreshold", 0, 0, Integer.MAX_VALUE);
 
+	private static final ModConfigSpec.BooleanValue TANKS_EMIT_LIGHT = BUILDER
+			.comment("Tanks will emit light when they contain a liquid that glows (eg. lava)")
+			.define("emitLight", true);
+
 	static {
 		BUILDER.pop();
 	}
 	// endregion
 
-	// a list of strings that are treated as resource locations for items
+	//region xp fluid
+	// [static info lives in FluidXpUtils]
 	private static final ModConfigSpec.ConfigValue<List<? extends String>> XP_FLUIDS = BUILDER
 			.comment("Fluids on this list will be used as XP fluids before the ones in the tag.",
 					"Using the tag at 20 mb per xp is hardcoded afterwards")
 			.defineListAllowEmpty("xpFluids", List.of("openblocks:xp_juice:20", "#c:experience:20"), Config::validateXpFluidConversion);
+
+	private static boolean validateXpFluidConversion(final Object obj) {
+		if (!(obj instanceof String s)) return false;
+		String[] split = s.split(":", 3);
+		if (split.length != 3) return false;
+		if (!ResourceLocation.isValidNamespace(split[0].startsWith("#") ? split[0].substring(1) : split[0]))
+			return false;
+		if (!ResourceLocation.isValidPath(split[1])) return false;
+		try {
+			Integer.parseInt(split[2]);
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		return true;
+	}
+	// endregion
 
 	//region cursor
 	static {
@@ -147,28 +167,13 @@ public class Config {
 
 	static final ModConfigSpec SPEC = BUILDER.build();
 
-
-	private static boolean validateXpFluidConversion(final Object obj) {
-		if (!(obj instanceof String s)) return false;
-		String[] split = s.split(":", 3);
-		if (split.length != 3) return false;
-		if (!ResourceLocation.isValidNamespace(split[0].startsWith("#") ? split[0].substring(1) : split[0]))
-			return false;
-		if (!ResourceLocation.isValidPath(split[1])) return false;
-		try {
-			Integer.parseInt(split[2]);
-		} catch (NumberFormatException e) {
-			return false;
-		}
-		return true;
-	}
-
 	@SubscribeEvent
 	public static void onLoad(final ModConfigEvent event) {
 		bucketsPerTank = BUCKETS_PER_TANK.getAsInt();
 		shouldTanksUpdate = SHOULD_TANKS_UPDATE.getAsBoolean();
 		displayAllFilledTanks = DISPLAY_ALL_FLUIDS.getAsBoolean();
 		tankFluidUpdateThreshold = UPDATE_THRESHOLD.getAsInt();
+		tanksEmitLight = TANKS_EMIT_LIGHT.getAsBoolean();
 
 		cursorDistanceLimit = CURSOR_MAX_DISTANCE.getAsDouble();
 		cursorCostPerMeter = CURSOR_XP_COST.getAsDouble();

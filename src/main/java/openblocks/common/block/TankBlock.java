@@ -8,16 +8,24 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.TintedGlassBlock;
+import net.minecraft.world.level.block.TransparentBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.world.AuxiliaryLightManager;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import openblocks.Config;
 import openblocks.OpenBlocks;
 import openblocks.common.blockentity.TankBlockEntity;
 import openblocks.lib.block.OpenEntityBlock;
@@ -46,16 +54,27 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 		super(properties, OpenBlocks.TANK_BE);
 	}
 
-	//@Override
-	//public int getLightValue(BlockState state, BlockGetter world, BlockPos pos) {
-	//	if (!Config.tanksEmitLight) {
-	//		return 0;
-	//	}
-//
-	//	TileEntityTank tile = getBlockEntity(world, pos, TileEntityTank.class);
-	//	return tile != null ? tile.getFluidLightLevel() : 0;
-	//}
+	@Override
+	public boolean hasDynamicLightEmission(BlockState state) {
+		return true;
+	}
 
+	@Override
+	public int getLightEmission(BlockState state, BlockGetter world, BlockPos pos) {
+		if (!Config.tanksEmitLight) return 0;
+		AuxiliaryLightManager manager = world.getAuxLightManager(pos);
+		return manager != null ? manager.getLightAt(pos) : 0;
+    }
+
+	@Override
+	protected float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+		return 0.8f;
+	}
+
+	@Override
+	protected VoxelShape getVisualShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+		return Shapes.empty();
+	}
 
 	@Override
 	public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader world, BlockPos pos, Player player) {
