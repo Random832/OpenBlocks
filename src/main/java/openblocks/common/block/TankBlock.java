@@ -66,6 +66,12 @@ public class TankBlock extends OpenEntityBlock<TankBlockEntity> {
 		return manager != null ? manager.getLightAt(pos) : 0;
     }
 
+	// TODO do we want to make these dynamic?
+	@Override
+	protected boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+		return true;
+	}
+
 	@Override
 	protected float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
 		return 0.8f;
