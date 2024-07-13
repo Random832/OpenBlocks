@@ -2,10 +2,7 @@ package openblocks.client.renderer.blockentity.tank;
 
 import com.google.common.collect.Maps;
 
-import java.util.Arrays;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -117,15 +114,15 @@ public class TankRenderLogic {
 
 	private static class TankRenderFluidData implements ITankRenderFluidData {
 
+		@Nullable
 		private final TankConnections connections;
-
-		private final FluidTank tank;
 
 		private final float phase;
 
-		public TankRenderFluidData(TankConnections connections, FluidTank tank, float phase) {
+		private FluidStack fluid = FluidStack.EMPTY;
+
+		public TankRenderFluidData(@Nullable TankConnections connections, float phase) {
 			this.connections = connections;
-			this.tank = tank;
 			this.phase = phase;
 		}
 
@@ -135,32 +132,27 @@ public class TankRenderLogic {
 
 		@Override
 		public boolean shouldRenderFluidWall(Direction side) {
-			switch (side) {
-				case DOWN:
-					return !isConnected(connections.getBottomConnection());
-				case UP:
-					return !isConnected(connections.getTopConnection());
-				case EAST:
-				case WEST:
-				case NORTH:
-				case SOUTH: {
-					return !isConnected(connections.getHorizontalConnection(side));
-				}
-				default:
-					return true;
-			}
+			if(connections == null) return true;
+            return switch (side) {
+                case DOWN -> !isConnected(connections.getBottomConnection());
+                case UP -> !isConnected(connections.getTopConnection());
+                case EAST, WEST, NORTH, SOUTH -> !isConnected(connections.getHorizontalConnection(side));
+                default -> true;
+            };
+		}
+
+		public void updateFluid(FluidStack fluid) {
+			this.fluid = fluid;
 		}
 
 		@Override
 		public boolean hasFluid() {
-			// TODO figure out why this can be null here
-			return !getFluid().isEmpty();
+			return !fluid.isEmpty();
 		}
 
 		@Override
 		public FluidStack getFluid() {
-			// TODO figure out why this can be null here
-			return tank == null ? FluidStack.EMPTY : tank.getFluid();
+			return fluid;
 		}
 
 		@Override
@@ -171,8 +163,9 @@ public class TankRenderLogic {
 
 		@Override
 		public float getCornerFluidLevel(Diagonal corner, float time) {
+			if(connections == null) return getCenterFluidLevel(time);
 			final DiagonalConnection diagonal = connections.getDiagonalConnection(corner);
-			return diagonal != null? diagonal.getRenderHeight(corner.getOpposite(), time) : getCenterFluidLevel(time);
+			return diagonal.getRenderHeight(corner.getOpposite(), time);
 		}
 	}
 
@@ -180,8 +173,10 @@ public class TankRenderLogic {
 
 	private BlockPos pos = BlockPos.ZERO;
 
+	@Nullable
 	private Level world;
 
+	@Nullable
 	private TankConnections connections;
 
 	private ITankRenderFluidData renderData = getRenderDataForBewlr();
@@ -300,12 +295,13 @@ public class TankRenderLogic {
 		} else {
 			float phase = TankRenderUtils.calculatePhase(pos.getX(), pos.getY(), pos.getZ());
 			this.connections = updateConnections();
-			this.renderData = new TankRenderFluidData(connections, tank, phase);
+			this.renderData = new TankRenderFluidData(connections, phase);
 		}
+		this.renderData.updateFluid(tank.getFluid());
 	}
 
 	private @NotNull TankRenderFluidData getRenderDataForBewlr() {
-		return new TankRenderFluidData(null, tank, TankRenderUtils.calculatePhase(pos.getX(), pos.getY(), pos.getZ())) {
+		return new TankRenderFluidData(null, TankRenderUtils.calculatePhase(pos.getX(), pos.getY(), pos.getZ())) {
 			@Override
 			public float getCornerFluidLevel(Diagonal corner, float time) {
 				return getCenterFluidLevel(time);
@@ -333,6 +329,7 @@ public class TankRenderLogic {
 	}
 
 	public void updateFluid(FluidStack stack) {
+		renderData.updateFluid(stack);
 		if (connections != null) {
 			connections.updateFluid(stack);
 		}
@@ -343,6 +340,7 @@ public class TankRenderLogic {
 		return renderData;
 	}
 
+	@Nullable
 	public ITankConnections getTankConnections() {
 		return connections;
 	}

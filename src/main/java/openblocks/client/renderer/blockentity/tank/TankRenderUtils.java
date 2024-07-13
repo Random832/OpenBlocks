@@ -57,8 +57,8 @@ public class TankRenderUtils {
 	}
 
 	@Nullable
-	public static BlockEntity getTileEntitySafe(Level world, BlockPos pos) {
-		if (world.isLoaded(pos)) {
+	public static BlockEntity getTileEntitySafe(@Nullable Level world, BlockPos pos) {
+		if (world != null && world.isLoaded(pos)) {
 			LevelChunk chunk = world.getChunkAt(pos);
 			return chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
 		}

@@ -5,6 +5,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import openblocks.lib.geometry.Diagonal;
 
 public interface ITankRenderFluidData {
+	void updateFluid(FluidStack fluid);
+
 	FluidStack getFluid();
 
 	boolean hasFluid();
