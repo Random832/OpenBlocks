@@ -49,10 +49,6 @@ public class TankBEWLR extends BlockEntityWithoutLevelRenderer {
         BlockModelShaper blockModelShaper = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper();
         BakedModel model = blockModelShaper.getBlockModel(state);
 
-        if(pDisplayContext == ItemDisplayContext.GUI)
-            // i don't know why the model doesn't do it
-            Lighting.setupFor3DItems();
-
         RandomSource rand = RandomSource.create(42);
         for (RenderType renderType : model.getRenderTypes(state, rand, modelData)) {
             VertexConsumer buf = pBuffer.getBuffer(RenderTypeHelper.getEntityRenderType(renderType, false));

@@ -153,17 +153,19 @@ public class TankRenderLogic {
 
 		@Override
 		public boolean hasFluid() {
-			return !tank.getFluid().isEmpty();
+			// TODO figure out why this can be null here
+			return !getFluid().isEmpty();
 		}
 
 		@Override
 		public FluidStack getFluid() {
-			return tank.getFluid();
+			// TODO figure out why this can be null here
+			return tank == null ? FluidStack.EMPTY : tank.getFluid();
 		}
 
 		@Override
 		public float getCenterFluidLevel(float time) {
-			final float raw = (float) tank.getFluid().getAmount() / tank.getCapacity();
+			final float raw = (float) getFluid().getAmount() / TankBlockEntity.getTankCapacity();
 			return TankRenderUtils.calculateRenderHeight(time, phase, raw);
 		}
 
